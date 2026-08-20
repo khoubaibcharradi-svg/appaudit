@@ -55,10 +55,6 @@ export async function listTemplates(): Promise<AuditTemplate[]> {
   return seedIfEmpty(templates);
 }
 
-export async function listActiveTemplates(): Promise<AuditTemplate[]> {
-  return (await listTemplates()).filter((t) => t.isActive);
-}
-
 export async function getTemplate(id: string): Promise<AuditTemplate | null> {
   return (await listTemplates()).find((t) => t.id === id) ?? null;
 }

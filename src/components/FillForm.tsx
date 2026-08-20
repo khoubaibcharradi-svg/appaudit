@@ -2,16 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AuditTemplate, KNOWN_SITES, QuestionDef, SCALE_OPTIONS, YES_NO_OPTIONS } from "@/lib/audit/types";
+import { AuditMission, AuditTemplate, KNOWN_SITES, QuestionDef, SCALE_OPTIONS, YES_NO_OPTIONS } from "@/lib/audit/types";
 import { allQuestions, isQuestionVisible } from "@/lib/audit/visibility";
 
 interface Props {
   template: AuditTemplate;
+  mission?: AuditMission;
 }
 
-export default function FillForm({ template }: Props) {
+export default function FillForm({ template, mission }: Props) {
   const router = useRouter();
-  const [site, setSite] = useState("");
+  const [site, setSite] = useState(mission?.site ?? "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,7 @@ export default function FillForm({ template }: Props) {
       const payload = {
         templateId: template.id,
         site: site.trim(),
+        missionId: mission?.id,
         answers: Object.entries(answers)
           .filter(([id]) => visibleIds.has(id))
           .map(([questionId, value]) => ({ questionId, value })),
@@ -70,21 +72,30 @@ export default function FillForm({ template }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-black dark:text-zinc-50">Site audité</span>
-          <input
-            list="known-sites"
-            value={site}
-            onChange={(e) => setSite(e.target.value)}
-            placeholder="Ex : Dépôt Jendouba"
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
-          />
-          <datalist id="known-sites">
-            {KNOWN_SITES.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
-        </label>
+        {mission ? (
+          <div className="text-sm">
+            <span className="font-medium text-black dark:text-zinc-50">Site audité</span>
+            <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+              {mission.site} — fixé par la mission, affectée à {mission.assignedToName}
+            </p>
+          </div>
+        ) : (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium text-black dark:text-zinc-50">Site audité</span>
+            <input
+              list="known-sites"
+              value={site}
+              onChange={(e) => setSite(e.target.value)}
+              placeholder="Ex : Dépôt Jendouba"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            />
+            <datalist id="known-sites">
+              {KNOWN_SITES.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </label>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-xs text-zinc-500">

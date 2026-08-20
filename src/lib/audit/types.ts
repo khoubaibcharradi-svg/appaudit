@@ -73,3 +73,21 @@ export interface Submission {
 }
 
 export const KNOWN_SITES = ["Usine S2I", "Dépôt Jendouba", "Dépôt Sfax", "Dépôt Sousse"];
+
+export type MissionStatus = "PLANIFIEE" | "TERMINEE";
+
+export interface AuditMission {
+  id: string;
+  templateId: string;
+  templateTitle: string;
+  site: string;
+  /** ISO date (YYYY-MM-DD) — when the audit is scheduled to take place. */
+  scheduledDate: string;
+  assignedTo: string;
+  assignedToName: string;
+  createdBy: string;
+  createdByName: string;
+  status: MissionStatus;
+  submissionId?: string;
+  createdAt: string;
+}

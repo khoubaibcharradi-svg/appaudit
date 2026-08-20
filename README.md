@@ -33,8 +33,8 @@ démarrage.
   tous les audits soumis, mais ne peut modifier ou supprimer que les formulaires qu'il a
   lui-même créés — les formulaires des autres admins s'ouvrent en lecture seule, avec un bouton
   « Dupliquer » pour en repartir.
-- **Personnel** : remplit les formulaires actifs pour un site donné (usine, dépôt…) et ne voit
-  que ses propres audits soumis.
+- **Personnel** : réalise les missions d'audit qui lui sont affectées et ne voit que ses propres
+  missions/audits soumis.
 
 ## Fonctionnement
 
@@ -51,14 +51,17 @@ démarrage.
 
   Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
-- **Remplissage** (`/fill/[templateId]`) : le personnel indique le site audité et répond aux
-  questions ; les questions de suivi apparaissent en direct.
+- **Missions** (`/missions`, création sur `/admin/missions/new`) : un admin crée une mission en
+  choisissant un formulaire (existant ou nouveau), un site, une date et un membre du personnel
+  affecté. Le personnel voit ses missions à réaliser sur son tableau de bord et dans « Mes
+  missions » ; le site est alors fixé par la mission. Une fois soumise, la mission passe à
+  « Terminée » et pointe vers le résultat.
 - **Résultats** (`/submissions`) : score de maturité calculé sur les questions à échelle.
 - **Thème** : bouton clair/sombre dans la barre de navigation (persisté en `localStorage`,
   respecte la préférence système par défaut).
 
-Les données (utilisateurs, formulaires, soumissions) sont stockées dans des fichiers JSON sous
-`data/` (non versionné) via `src/lib/store`.
+Les données (utilisateurs, formulaires, missions, soumissions) sont stockées dans des fichiers
+JSON sous `data/` (non versionné) via `src/lib/store`.
 
 ## Stack
 
