@@ -1,55 +1,75 @@
-export type AnswerValue = "always" | "often" | "sometimes" | "rarely" | "never";
+export type QuestionType = "SCALE" | "YES_NO" | "TEXT" | "NUMBER";
 
-export const ANSWER_OPTIONS: { value: AnswerValue; label: string; score: number }[] = [
+export const SCALE_OPTIONS = [
   { value: "always", label: "Toujours", score: 1 },
   { value: "often", label: "Souvent", score: 0.75 },
   { value: "sometimes", label: "Parfois", score: 0.5 },
   { value: "rarely", label: "Rarement", score: 0.25 },
   { value: "never", label: "Jamais", score: 0 },
-];
+] as const;
 
-export type Depth = "rapide" | "standard" | "approfondi";
+export const YES_NO_OPTIONS = [
+  { value: "yes", label: "Oui" },
+  { value: "no", label: "Non" },
+] as const;
 
-export const DEPTH_QUESTIONS_PER_CATEGORY: Record<Depth, number> = {
-  rapide: 3,
-  standard: 5,
-  approfondi: 8,
-};
-
-export interface CategoryDef {
-  id: string;
-  label: string;
-  description: string;
+export function optionsForType(type: QuestionType): { value: string; label: string }[] | null {
+  if (type === "SCALE") return SCALE_OPTIONS.map(({ value, label }) => ({ value, label }));
+  if (type === "YES_NO") return YES_NO_OPTIONS.map(({ value, label }) => ({ value, label }));
+  return null;
 }
 
-export interface QuestionTemplate {
+export interface DependsOn {
+  questionId: string;
+  /** The question becomes visible once the parent's answer is one of these values. */
+  triggerValues: string[];
+}
+
+export interface QuestionDef {
   id: string;
-  categoryId: string;
   text: string;
+  type: QuestionType;
   weight: 1 | 2 | 3;
-  /** Only offered as a candidate when the answer to `dependsOn` matches `whenValueAtMost`. */
-  dependsOn?: {
-    questionId: string;
-    whenValueAtMost: AnswerValue;
-  };
+  required: boolean;
+  dependsOn?: DependsOn;
 }
 
-export interface GeneratedQuestion extends QuestionTemplate {
-  isFollowUp: boolean;
-}
-
-export type AnswersMap = Record<string, AnswerValue>;
-
-export interface CategoryResult {
-  categoryId: string;
+export interface SectionDef {
+  id: string;
   label: string;
-  scorePercent: number;
-  level: "critique" | "a_ameliorer" | "correct" | "excellent";
-  recommendation: string;
+  questions: QuestionDef[];
 }
 
-export interface AuditResult {
-  overallScorePercent: number;
-  categories: CategoryResult[];
-  answeredCount: number;
+export interface AuditTemplate {
+  id: string;
+  title: string;
+  description: string;
+  sections: SectionDef[];
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
 }
+
+export interface AnswerEntry {
+  questionId: string;
+  value: string;
+}
+
+export type SubmissionStatus = "DRAFT" | "SUBMITTED";
+
+export interface Submission {
+  id: string;
+  templateId: string;
+  templateTitle: string;
+  site: string;
+  filledBy: string;
+  filledByName: string;
+  status: SubmissionStatus;
+  answers: AnswerEntry[];
+  createdAt: string;
+  submittedAt?: string;
+}
+
+export const KNOWN_SITES = ["Usine S2I", "Dépôt Jendouba", "Dépôt Sfax", "Dépôt Sousse"];

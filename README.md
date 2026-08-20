@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Audit App
 
-## Getting Started
+Application Next.js pour le département audit : les administrateurs créent des formulaires
+d'audit (avec questions conditionnelles), le personnel les remplit sur le terrain, et les
+résultats sont consultables avec un score de maturité par audit.
 
-First, run the development server:
+## Démarrage
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Au premier démarrage, deux comptes sont créés automatiquement (stockés dans `data/users.json`,
+non versionné) :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Rôle       | Email                  | Mot de passe    |
+| ---------- | ----------------------- | ---------------- |
+| Admin      | `admin@s2i.local`       | `Admin123!`      |
+| Personnel  | `auditeur@s2i.local`    | `Personnel123!`  |
 
-## Learn More
+Ces identifiants sont personnalisables via les variables d'environnement `SEED_ADMIN_EMAIL`,
+`SEED_ADMIN_PASSWORD`, `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD` (voir `.env.example`).
+L'admin peut ensuite créer d'autres comptes depuis `/admin/users`.
 
-To learn more about Next.js, take a look at the following resources:
+## Fonctionnement
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Admin** : crée/édite les formulaires d'audit (`/admin/templates`), organisés en sections de
+  questions (échelle, oui/non, texte, nombre). Une question peut être définie comme "question de
+  suivi" qui n'apparaît que si une question précédente reçoit une réponse déclenchante — le
+  questionnaire vu par le personnel est donc généré dynamiquement au fil des réponses.
+- **Personnel** : remplit les formulaires actifs (`/fill/[templateId]`) pour un site donné
+  (usine, dépôt…) et soumet l'audit.
+- **Résultats** (`/submissions`) : le personnel voit ses propres audits, l'admin voit tous les
+  audits soumis, avec un score de maturité calculé sur les questions à échelle.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Les données (utilisateurs, formulaires, soumissions) sont stockées dans des fichiers JSON sous
+`data/` (non versionné) via `src/lib/store`.
 
-## Deploy on Vercel
+## Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js (App Router) + TypeScript + Tailwind CSS. Authentification par session JWT (cookie
+httpOnly, `jose`) avec mots de passe hachés (`bcryptjs`). Les routes sont protégées par
+`src/proxy.ts` (le rôle `ADMIN` est requis sur `/admin/**`).
