@@ -1,8 +1,24 @@
 import CreateUserForm from "@/components/CreateUserForm";
+import { getSession } from "@/lib/auth/session";
+import { Role } from "@/lib/auth/types";
 import { listUsers } from "@/lib/store/users";
 
+const ROLE_BADGE: Record<Role, string> = {
+  SUPERADMIN: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
+  ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+  PERSONNEL: "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400",
+};
+
+const ROLE_LABEL: Record<Role, string> = {
+  SUPERADMIN: "Superadmin",
+  ADMIN: "Admin",
+  PERSONNEL: "Personnel",
+};
+
 export default async function UsersPage() {
+  const session = await getSession();
   const users = await listUsers();
+  const canGrantAdmin = session?.role === "SUPERADMIN";
 
   return (
     <div className="flex flex-col gap-6">
@@ -14,10 +30,12 @@ export default async function UsersPage() {
       <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
         <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Créer un compte</h2>
         <p className="mt-1 text-xs text-zinc-500">
-          Les administrateurs créent les formulaires d&apos;audit. Le personnel les remplit sur le terrain.
+          {canGrantAdmin
+            ? "En tant que superadmin, vous pouvez créer des comptes personnel, admin ou superadmin."
+            : "Vous pouvez créer des comptes personnel. Seul un superadmin peut créer des comptes admin."}
         </p>
         <div className="mt-4">
-          <CreateUserForm />
+          <CreateUserForm canGrantAdmin={canGrantAdmin} />
         </div>
       </div>
 
@@ -29,14 +47,8 @@ export default async function UsersPage() {
                 <p className="text-sm font-medium text-black dark:text-zinc-50">{u.name}</p>
                 <p className="text-xs text-zinc-500">{u.email}</p>
               </div>
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  u.role === "ADMIN"
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
-                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
-                }`}
-              >
-                {u.role === "ADMIN" ? "Admin" : "Personnel"}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGE[u.role]}`}>
+                {ROLE_LABEL[u.role]}
               </span>
             </div>
           ))}

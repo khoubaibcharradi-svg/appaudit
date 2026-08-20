@@ -19,7 +19,7 @@ async function seedIfEmpty(users: User[]): Promise<User[]> {
       name: "Administrateur Audit",
       email: adminEmail,
       passwordHash: await hashPassword(adminPassword),
-      role: "ADMIN",
+      role: "SUPERADMIN",
       createdAt: new Date().toISOString(),
     },
     {
@@ -33,7 +33,7 @@ async function seedIfEmpty(users: User[]): Promise<User[]> {
   ];
   await writeCollection(COLLECTION, seeded);
   console.log(
-    `[seed] Comptes créés — admin: ${adminEmail} / ${adminPassword} · personnel: ${staffEmail} / ${staffPassword}`
+    `[seed] Comptes créés — superadmin: ${adminEmail} / ${adminPassword} · personnel: ${staffEmail} / ${staffPassword}`
   );
   return seeded;
 }
@@ -51,6 +51,12 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 export async function findUserById(id: string): Promise<User | null> {
   const users = await listUsers();
   return users.find((u) => u.id === id) ?? null;
+}
+
+/** Used to attribute system-seeded content (e.g. the standard template) to a real account. */
+export async function findAnySuperAdmin(): Promise<User | null> {
+  const users = await listUsers();
+  return users.find((u) => u.role === "SUPERADMIN") ?? null;
 }
 
 export async function createUser(input: {

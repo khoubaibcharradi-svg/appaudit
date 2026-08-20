@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Role } from "@/lib/auth/types";
+import { Role, isAdminRole } from "@/lib/auth/types";
+import ThemeToggle from "./ThemeToggle";
 
 interface Props {
   name: string;
   role: Role;
 }
+
+const ROLE_LABELS: Record<Role, string> = {
+  SUPERADMIN: "Superadmin",
+  ADMIN: "Admin",
+  PERSONNEL: "Personnel",
+};
 
 export default function Navbar({ name, role }: Props) {
   const router = useRouter();
@@ -22,18 +29,17 @@ export default function Navbar({ name, role }: Props) {
     router.refresh();
   }
 
-  const links =
-    role === "ADMIN"
-      ? [
-          { href: "/", label: "Tableau de bord" },
-          { href: "/admin/templates", label: "Formulaires" },
-          { href: "/admin/users", label: "Utilisateurs" },
-          { href: "/submissions", label: "Résultats" },
-        ]
-      : [
-          { href: "/", label: "Tableau de bord" },
-          { href: "/submissions", label: "Mes audits" },
-        ];
+  const links = isAdminRole(role)
+    ? [
+        { href: "/", label: "Tableau de bord" },
+        { href: "/admin/templates", label: "Formulaires" },
+        { href: "/admin/users", label: "Utilisateurs" },
+        { href: "/submissions", label: "Résultats" },
+      ]
+    : [
+        { href: "/", label: "Tableau de bord" },
+        { href: "/submissions", label: "Mes audits" },
+      ];
 
   return (
     <header className="border-b border-black/[.08] bg-white dark:border-white/[.145] dark:bg-zinc-950">
@@ -53,9 +59,10 @@ export default function Navbar({ name, role }: Props) {
           <span className="whitespace-nowrap text-zinc-600 dark:text-zinc-400">
             {name} ·{" "}
             <span className="rounded-full bg-black/[.06] px-2 py-0.5 text-xs font-medium dark:bg-white/[.1]">
-              {role === "ADMIN" ? "Admin" : "Personnel"}
+              {ROLE_LABELS[role]}
             </span>
           </span>
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             disabled={loggingOut}
@@ -65,15 +72,18 @@ export default function Navbar({ name, role }: Props) {
           </button>
         </div>
 
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Ouvrir le menu"
-          aria-expanded={menuOpen}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/[.12] sm:hidden dark:border-white/[.2]"
-        >
-          <span className="sr-only">Menu</span>
-          {menuOpen ? "✕" : "☰"}
-        </button>
+        <div className="flex items-center gap-2 sm:hidden">
+          <ThemeToggle />
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-black/[.12] dark:border-white/[.2]"
+          >
+            <span className="sr-only">Menu</span>
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
       </div>
 
       {menuOpen && (
@@ -94,7 +104,7 @@ export default function Navbar({ name, role }: Props) {
             <span className="text-sm text-zinc-600 dark:text-zinc-400">
               {name} ·{" "}
               <span className="rounded-full bg-black/[.06] px-2 py-0.5 text-xs font-medium dark:bg-white/[.1]">
-                {role === "ADMIN" ? "Admin" : "Personnel"}
+                {ROLE_LABELS[role]}
               </span>
             </span>
             <button

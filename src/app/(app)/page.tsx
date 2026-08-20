@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
+import { isAdminRole } from "@/lib/auth/types";
 import { listActiveTemplates, listTemplates } from "@/lib/store/templates";
 import { listSubmissions, listSubmissionsForUser } from "@/lib/store/submissions";
 
@@ -7,7 +8,7 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
 
-  if (session.role === "ADMIN") {
+  if (isAdminRole(session.role)) {
     const [templates, submissions] = await Promise.all([listTemplates(), listSubmissions()]);
     const activeCount = templates.filter((t) => t.isActive).length;
 

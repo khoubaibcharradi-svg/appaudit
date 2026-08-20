@@ -2,13 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Role } from "@/lib/auth/types";
 
-export default function CreateUserForm() {
+interface Props {
+  /** Only a SUPERADMIN may grant ADMIN/SUPERADMIN rights; a plain ADMIN can only onboard PERSONNEL. */
+  canGrantAdmin: boolean;
+}
+
+export default function CreateUserForm({ canGrantAdmin }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"ADMIN" | "PERSONNEL">("PERSONNEL");
+  const [role, setRole] = useState<Role>("PERSONNEL");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -73,11 +79,16 @@ export default function CreateUserForm() {
           <span className="font-medium text-black dark:text-zinc-50">Rôle</span>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as "ADMIN" | "PERSONNEL")}
+            onChange={(e) => setRole(e.target.value as Role)}
             className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
           >
             <option value="PERSONNEL">Personnel (remplit les audits)</option>
-            <option value="ADMIN">Admin (crée les formulaires)</option>
+            {canGrantAdmin && (
+              <>
+                <option value="ADMIN">Admin (crée les formulaires)</option>
+                <option value="SUPERADMIN">Superadmin (accès complet)</option>
+              </>
+            )}
           </select>
         </label>
       </div>

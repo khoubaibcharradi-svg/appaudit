@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
+import { isAdminRole } from "@/lib/auth/types";
 import { listSubmissions, listSubmissionsForUser } from "@/lib/store/submissions";
 
 export default async function SubmissionsPage() {
   const session = await getSession();
   if (!session) return null;
 
-  const submissions = session.role === "ADMIN" ? await listSubmissions() : await listSubmissionsForUser(session.sub);
+  const submissions = isAdminRole(session.role) ? await listSubmissions() : await listSubmissionsForUser(session.sub);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-          {session.role === "ADMIN" ? "Tous les audits" : "Mes audits"}
+          {isAdminRole(session.role) ? "Tous les audits" : "Mes audits"}
         </p>
         <h1 className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">Résultats</h1>
       </div>

@@ -1,14 +1,20 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import TemplateBuilder from "@/components/TemplateBuilder";
+import { getSession } from "@/lib/auth/session";
+import { canManageTemplate } from "@/lib/audit/permissions";
 import { getTemplate } from "@/lib/store/templates";
 import { listSubmissionsForTemplate } from "@/lib/store/submissions";
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
   const { id } = await params;
   const template = await getTemplate(id);
   if (!template) notFound();
 
+  const canManage = canManageTemplate(session, template);
   const submissions = await listSubmissionsForTemplate(id);
 
   return (
@@ -16,9 +22,19 @@ export default async function EditTemplatePage({ params }: { params: Promise<{ i
       <div>
         <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">Administration</p>
         <h1 className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">{template.title}</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Créé par {template.createdBy === session.sub ? "vous" : template.createdByName}
+        </p>
       </div>
 
-      <TemplateBuilder mode="edit" templateId={template.id} initial={template} />
+      {!canManage && (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          Lecture seule — seul l&apos;auteur (ou un superadmin) peut modifier ou supprimer ce formulaire. Vous
+          pouvez le dupliquer pour créer votre propre version.
+        </p>
+      )}
+
+      <TemplateBuilder mode="edit" templateId={template.id} initial={template} readOnly={!canManage} />
 
       <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
         <h2 className="text-sm font-semibold text-black dark:text-zinc-50">

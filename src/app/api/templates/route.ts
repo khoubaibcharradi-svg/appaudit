@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { isAdminRole } from "@/lib/auth/types";
 import { ValidationError, sanitizeSections } from "@/lib/audit/validate";
 import { createTemplate } from "@/lib/store/templates";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
-  if (session.role !== "ADMIN") return NextResponse.json({ error: "Réservé aux administrateurs." }, { status: 403 });
+  if (!isAdminRole(session.role)) {
+    return NextResponse.json({ error: "Réservé aux administrateurs." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === "string" ? body.title.trim() : "";

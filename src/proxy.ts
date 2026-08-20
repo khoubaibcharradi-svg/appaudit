@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRole } from "@/lib/auth/types";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 export const config = {
@@ -15,7 +16,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (req.nextUrl.pathname.startsWith("/admin") && session.role !== "ADMIN") {
+  if (req.nextUrl.pathname.startsWith("/admin") && !isAdminRole(session.role)) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 

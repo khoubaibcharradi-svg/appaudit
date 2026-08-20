@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
 import { listTemplates } from "@/lib/store/templates";
 import { listSubmissions } from "@/lib/store/submissions";
 
 export default async function TemplatesListPage() {
-  const [templates, submissions] = await Promise.all([listTemplates(), listSubmissions()]);
+  const [session, templates, submissions] = await Promise.all([
+    getSession(),
+    listTemplates(),
+    listSubmissions(),
+  ]);
   const submissionCountByTemplate = new Map<string, number>();
   for (const s of submissions) {
     submissionCountByTemplate.set(s.templateId, (submissionCountByTemplate.get(s.templateId) ?? 0) + 1);
@@ -11,7 +16,7 @@ export default async function TemplatesListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">Administration</p>
           <h1 className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">Formulaires d&apos;audit</h1>
@@ -37,11 +42,12 @@ export default async function TemplatesListPage() {
                 <p className="text-sm font-medium text-black dark:text-zinc-50">{t.title}</p>
                 <p className="text-xs text-zinc-500">
                   {t.sections.reduce((n, s) => n + s.questions.length, 0)} questions ·{" "}
-                  {submissionCountByTemplate.get(t.id) ?? 0} audits soumis
+                  {submissionCountByTemplate.get(t.id) ?? 0} audits soumis · créé par{" "}
+                  {t.createdBy === session?.sub ? "vous" : t.createdByName}
                 </p>
               </div>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                   t.isActive
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
                     : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"

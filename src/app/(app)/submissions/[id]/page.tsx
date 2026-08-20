@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
+import { isAdminRole } from "@/lib/auth/types";
 import { QuestionDef, SCALE_OPTIONS, YES_NO_OPTIONS } from "@/lib/audit/types";
 import { computeMaturityScore } from "@/lib/audit/score";
 import { getSubmission } from "@/lib/store/submissions";
@@ -19,7 +20,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
   const { id } = await params;
   const submission = await getSubmission(id);
   if (!submission) notFound();
-  if (session.role !== "ADMIN" && submission.filledBy !== session.sub) notFound();
+  if (!isAdminRole(session.role) && submission.filledBy !== session.sub) notFound();
 
   const template = await getTemplate(submission.templateId);
   const answerMap = Object.fromEntries(submission.answers.map((a) => [a.questionId, a.value]));

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import FillForm from "@/components/FillForm";
 import { getSession } from "@/lib/auth/session";
+import { isAdminRole } from "@/lib/auth/types";
 import { getTemplate } from "@/lib/store/templates";
 
 export default async function FillTemplatePage({ params }: { params: Promise<{ templateId: string }> }) {
@@ -10,7 +11,7 @@ export default async function FillTemplatePage({ params }: { params: Promise<{ t
   const { templateId } = await params;
   const template = await getTemplate(templateId);
   if (!template) notFound();
-  if (!template.isActive && session.role !== "ADMIN") notFound();
+  if (!template.isActive && !isAdminRole(session.role)) notFound();
 
   return (
     <div className="flex flex-col gap-6">
