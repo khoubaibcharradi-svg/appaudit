@@ -287,7 +287,7 @@ function QuestionRow({
 
           {candidateParents.length > 0 && (
             <div className="rounded-lg bg-black/[.02] p-2 text-xs dark:bg-white/[.04]">
-              <label className="flex items-center gap-1">
+              <label className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <span className="text-zinc-500">Question de suivi conditionnelle (facultatif) — dépend de</span>
                 <select
                   value={question.dependsOn?.questionId ?? ""}
@@ -296,7 +296,7 @@ function QuestionRow({
                       dependsOn: e.target.value ? { questionId: e.target.value, triggerValues: [] } : undefined,
                     })
                   }
-                  className="rounded-md border border-black/[.12] bg-transparent px-2 py-1 dark:border-white/[.2]"
+                  className="w-full rounded-md border border-black/[.12] bg-transparent px-2 py-1 sm:w-auto dark:border-white/[.2]"
                 >
                   <option value="">Aucune (toujours visible)</option>
                   {candidateParents.map((p) => (
