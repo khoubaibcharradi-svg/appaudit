@@ -1,10 +1,30 @@
 import { randomUUID } from "crypto";
-import { buildStandardSections } from "@/lib/audit/standardTemplate";
+import { buildDepotStandardSections, buildUsineStandardSections } from "@/lib/audit/standardTemplate";
 import { AuditTemplate, SectionDef } from "@/lib/audit/types";
 import { readCollection, writeCollection } from "./jsonStore";
 import { findAnySuperAdmin } from "./users";
 
 const COLLECTION = "templates";
+
+function buildStandardTemplate(
+  title: string,
+  description: string,
+  sections: SectionDef[],
+  creator: { id: string; name: string }
+): AuditTemplate {
+  const now = new Date().toISOString();
+  return {
+    id: randomUUID(),
+    title,
+    description,
+    sections,
+    isActive: false,
+    createdBy: creator.id,
+    createdByName: creator.name,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 async function seedIfEmpty(templates: AuditTemplate[]): Promise<AuditTemplate[]> {
   if (templates.length > 0) return templates;
@@ -12,21 +32,22 @@ async function seedIfEmpty(templates: AuditTemplate[]): Promise<AuditTemplate[]>
   const creator = await findAnySuperAdmin();
   if (!creator) return templates;
 
-  const now = new Date().toISOString();
-  const standard: AuditTemplate = {
-    id: randomUUID(),
-    title: "Modèle standard — Audit dépôt / usine",
-    description:
-      "Trame standard couvrant inventaire, caisse, facturation, organisation, recouvrement, production et sécurité. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
-    sections: buildStandardSections(),
-    isActive: false,
-    createdBy: creator.id,
-    createdByName: creator.name,
-    createdAt: now,
-    updatedAt: now,
-  };
-  await writeCollection(COLLECTION, [standard]);
-  return [standard];
+  const standards = [
+    buildStandardTemplate(
+      "Audit industriel — Usine S2I",
+      "Trame standard pour les audits usine : ventes, ordres de fabrication, machines/moules, matières premières, rebuts, recouvrement, RH et sécurité. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
+      buildUsineStandardSections(),
+      creator
+    ),
+    buildStandardTemplate(
+      "Audit logistique et commercial — Dépôt",
+      "Trame standard pour les audits dépôt : inventaire stock, clôture de caisse, facturation/livraison, retours clients, organisation et recouvrement. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
+      buildDepotStandardSections(),
+      creator
+    ),
+  ];
+  await writeCollection(COLLECTION, standards);
+  return standards;
 }
 
 export async function listTemplates(): Promise<AuditTemplate[]> {

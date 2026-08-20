@@ -22,7 +22,7 @@ non versionné) :
 
 Ces identifiants sont personnalisables via les variables d'environnement `SEED_ADMIN_EMAIL`,
 `SEED_ADMIN_PASSWORD`, `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD` (voir `.env.example`).
-Un modèle de formulaire standard (voir plus bas) est aussi créé automatiquement au premier
+Deux formulaires standards (voir plus bas) sont aussi créés automatiquement au premier
 démarrage.
 
 ## Rôles
@@ -42,10 +42,14 @@ démarrage.
   texte, nombre). Une question peut être définie comme « question de suivi » qui n'apparaît que
   si une question précédente reçoit une réponse déclenchante — le questionnaire vu par le
   personnel est donc généré dynamiquement au fil des réponses.
-- **Modèle standard** : un formulaire de base (« Modèle standard — Audit dépôt / usine ») est
-  seedé au premier démarrage, construit à partir des thèmes récurrents des audits réels
-  (inventaire, caisse, facturation, organisation, recouvrement, production, hygiène/sécurité).
-  Il est inactif par défaut ; pour créer un nouveau formulaire, dupliquez-le (bouton
+- **Modèles standards** : deux formulaires de base sont seedés au premier démarrage, construits
+  à partir des audits réels fournis :
+  - « Audit industriel — Usine S2I » (ventes, ordres de fabrication, machines/moules, matières
+    premières, rebuts, recouvrement, RH, hygiène/sécurité) ;
+  - « Audit logistique et commercial — Dépôt » (inventaire stock, clôture de caisse, facturation
+    et retours clients, organisation, recouvrement et effets).
+
+  Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
 - **Remplissage** (`/fill/[templateId]`) : le personnel indique le site audité et répond aux
   questions ; les questions de suivi apparaissent en direct.
