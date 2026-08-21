@@ -49,7 +49,7 @@ export default function Navbar({ name, role }: Props) {
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-6">
           <Link href="/" className="shrink-0">
-            <PromofoodLogo size={24} withWordmark />
+            <PromofoodLogo variant="full" size={26} />
           </Link>
           <nav className="hidden items-center gap-4 text-sm text-zinc-600 sm:flex dark:text-zinc-400">
             {links.map((link) => (

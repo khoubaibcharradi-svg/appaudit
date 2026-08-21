@@ -35,8 +35,8 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-16 font-sans dark:bg-black">
       <div className="w-full max-w-sm rounded-2xl border border-black/[.08] bg-white p-8 shadow-sm dark:border-white/[.145] dark:bg-zinc-950">
-        <PromofoodLogo size={36} />
-        <p className="mt-4 text-sm font-medium uppercase tracking-wide text-zinc-500">Promofood · Audit</p>
+        <PromofoodLogo variant="full" size={40} />
+        <p className="mt-4 text-sm font-medium uppercase tracking-wide text-zinc-500">Audit</p>
         <h1 className="mt-1 text-xl font-semibold text-black dark:text-zinc-50">Connexion</h1>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
