@@ -87,7 +87,7 @@ export default function FillForm({ template, mission }: Props) {
               value={site}
               onChange={(e) => setSite(e.target.value)}
               placeholder="Ex : Dépôt Jendouba"
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             />
             <datalist id="known-sites">
               {KNOWN_SITES.map((s) => (
@@ -105,7 +105,7 @@ export default function FillForm({ template, mission }: Props) {
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.1]">
         <div
-          className="h-full rounded-full bg-black transition-all dark:bg-white"
+          className="h-full rounded-full bg-brand transition-all"
           style={{ width: `${visibleRequired.length ? (answeredRequired / visibleRequired.length) * 100 : 0}%` }}
         />
       </div>
@@ -139,7 +139,7 @@ export default function FillForm({ template, mission }: Props) {
       <button
         onClick={handleSubmit}
         disabled={saving}
-        className="flex h-12 w-full items-center justify-center rounded-full bg-foreground px-5 font-medium text-background transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#ccc]"
+        className="flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
       >
         {saving ? "Envoi…" : "Soumettre l'audit"}
       </button>
@@ -185,7 +185,7 @@ function QuestionField({
               onClick={() => onChange(option.value)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                 value === option.value
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                  ? "border-brand bg-brand text-white dark:border-brand dark:bg-brand dark:text-white"
                   : "border-black/[.12] text-zinc-700 hover:bg-black/[.04] dark:border-white/[.2] dark:text-zinc-300 dark:hover:bg-white/[.08]"
               }`}
             >
@@ -204,7 +204,7 @@ function QuestionField({
               onClick={() => onChange(option.value)}
               className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
                 value === option.value
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
+                  ? "border-brand bg-brand text-white dark:border-brand dark:bg-brand dark:text-white"
                   : "border-black/[.12] text-zinc-700 hover:bg-black/[.04] dark:border-white/[.2] dark:text-zinc-300 dark:hover:bg-white/[.08]"
               }`}
             >
@@ -220,7 +220,7 @@ function QuestionField({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           placeholder="Constat, observation, plan d'action…"
-          className="mt-3 w-full rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+          className="mt-3 w-full rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
         />
       )}
 
@@ -229,7 +229,7 @@ function QuestionField({
           type="number"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
-          className="mt-3 w-40 rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+          className="mt-3 w-40 rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
         />
       )}
     </div>

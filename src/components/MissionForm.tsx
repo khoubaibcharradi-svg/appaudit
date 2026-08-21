@@ -63,7 +63,7 @@ export default function MissionForm({ templates, users }: Props) {
         </p>
         <Link
           href="/admin/templates/new"
-          className="mt-3 inline-block rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
+          className="mt-3 inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
         >
           Créer un formulaire
         </Link>
@@ -79,7 +79,7 @@ export default function MissionForm({ templates, users }: Props) {
           <select
             value={templateId}
             onChange={(e) => setTemplateId(e.target.value)}
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           >
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
@@ -104,7 +104,7 @@ export default function MissionForm({ templates, users }: Props) {
             value={site}
             onChange={(e) => setSite(e.target.value)}
             placeholder="Ex : Dépôt Jendouba"
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           />
           <datalist id="known-sites">
             {KNOWN_SITES.map((s) => (
@@ -121,7 +121,7 @@ export default function MissionForm({ templates, users }: Props) {
               required
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             />
           </label>
 
@@ -130,7 +130,7 @@ export default function MissionForm({ templates, users }: Props) {
             <select
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             >
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
@@ -147,7 +147,7 @@ export default function MissionForm({ templates, users }: Props) {
       <button
         type="submit"
         disabled={saving || !site.trim()}
-        className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-foreground px-5 font-medium text-background transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#ccc] sm:w-auto"
+        className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
       >
         {saving ? "Création…" : "Créer la mission"}
       </button>

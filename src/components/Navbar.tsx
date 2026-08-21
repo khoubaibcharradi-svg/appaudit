@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Role, isAdminRole } from "@/lib/auth/types";
+import PromofoodLogo from "./PromofoodLogo";
 import ThemeToggle from "./ThemeToggle";
 
 interface Props {
@@ -47,7 +48,9 @@ export default function Navbar({ name, role }: Props) {
     <header className="border-b border-black/[.08] bg-white dark:border-white/[.145] dark:bg-zinc-950">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-6">
-          <span className="shrink-0 text-sm font-semibold text-black dark:text-zinc-50">Audit App</span>
+          <Link href="/" className="shrink-0">
+            <PromofoodLogo size={24} withWordmark />
+          </Link>
           <nav className="hidden items-center gap-4 text-sm text-zinc-600 sm:flex dark:text-zinc-400">
             {links.map((link) => (
               <Link key={link.href} href={link.href} className="whitespace-nowrap hover:text-black dark:hover:text-zinc-50">

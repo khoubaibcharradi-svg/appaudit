@@ -171,7 +171,7 @@ export default function TemplateBuilder({ mode, templateId, initial, readOnly = 
               onChange={(e) => setTitle(e.target.value)}
               disabled={readOnly}
               placeholder="Ex : Audit dépôt — Inventaire et caisse"
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black disabled:opacity-60 dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand disabled:opacity-60 dark:border-white/[.2] dark:focus:border-brand"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -182,7 +182,7 @@ export default function TemplateBuilder({ mode, templateId, initial, readOnly = 
               disabled={readOnly}
               rows={2}
               placeholder="Objectif de l'audit, périmètre…"
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black disabled:opacity-60 dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand disabled:opacity-60 dark:border-white/[.2] dark:focus:border-brand"
             />
           </label>
           <label className="flex items-center gap-2 text-sm">
@@ -208,7 +208,7 @@ export default function TemplateBuilder({ mode, templateId, initial, readOnly = 
               onChange={(e) => updateSection(section.id, { label: e.target.value })}
               disabled={readOnly}
               placeholder={`Section ${sIndex + 1} (ex : Inventaire stock)`}
-              className="flex-1 rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm font-medium outline-none focus:border-black disabled:opacity-60 dark:border-white/[.2] dark:focus:border-white"
+              className="flex-1 rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm font-medium outline-none focus:border-brand disabled:opacity-60 dark:border-white/[.2] dark:focus:border-brand"
             />
             {!readOnly && sections.length > 1 && (
               <button
@@ -267,7 +267,7 @@ export default function TemplateBuilder({ mode, templateId, initial, readOnly = 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex h-12 items-center justify-center rounded-full bg-foreground px-5 font-medium text-background transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#ccc]"
+            className="flex h-12 items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving ? "Enregistrement…" : mode === "create" ? "Créer le formulaire" : "Enregistrer les modifications"}
           </button>
@@ -325,7 +325,7 @@ function QuestionRow({
             onChange={(e) => onChange({ text: e.target.value })}
             disabled={readOnly}
             placeholder="Texte de la question"
-            className="w-full rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black disabled:opacity-60 dark:border-white/[.2] dark:focus:border-white"
+            className="w-full rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand disabled:opacity-60 dark:border-white/[.2] dark:focus:border-brand"
           />
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <label className="flex items-center gap-1">

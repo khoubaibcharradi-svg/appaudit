@@ -51,7 +51,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -61,7 +61,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -72,7 +72,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -80,7 +80,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as Role)}
-            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           >
             <option value="PERSONNEL">Personnel (remplit les audits)</option>
             {canGrantAdmin && (
@@ -98,7 +98,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
       <button
         type="submit"
         disabled={saving}
-        className="self-start rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#ccc]"
+        className="self-start rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
       >
         {saving ? "Création…" : "Créer l'utilisateur"}
       </button>

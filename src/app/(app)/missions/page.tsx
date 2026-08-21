@@ -22,7 +22,7 @@ export default async function MissionsPage() {
         {admin && (
           <Link
             href="/admin/missions/new"
-            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            className="rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
           >
             + Nouvelle mission
           </Link>
@@ -66,7 +66,7 @@ export default async function MissionsPage() {
                   (m.assignedTo === session.sub || admin) && (
                     <Link
                       href={`/fill/${m.templateId}?missionId=${m.id}`}
-                      className="rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
+                      className="rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-hover"
                     >
                       Remplir
                     </Link>

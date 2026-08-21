@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import PromofoodLogo from "@/components/PromofoodLogo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,7 +35,8 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-16 font-sans dark:bg-black">
       <div className="w-full max-w-sm rounded-2xl border border-black/[.08] bg-white p-8 shadow-sm dark:border-white/[.145] dark:bg-zinc-950">
-        <p className="text-sm font-medium uppercase tracking-wide text-zinc-500">Audit App</p>
+        <PromofoodLogo size={36} />
+        <p className="mt-4 text-sm font-medium uppercase tracking-wide text-zinc-500">Promofood · Audit</p>
         <h1 className="mt-1 text-xl font-semibold text-black dark:text-zinc-50">Connexion</h1>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
@@ -45,7 +47,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
               placeholder="admin@s2i.local"
             />
           </label>
@@ -56,7 +58,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-black dark:border-white/[.2] dark:focus:border-white"
+              className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
               placeholder="••••••••"
             />
           </label>
@@ -66,7 +68,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex h-11 w-full items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#ccc]"
+            className="mt-2 flex h-11 w-full items-center justify-center rounded-full bg-brand px-5 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? "Connexion…" : "Se connecter"}
           </button>
