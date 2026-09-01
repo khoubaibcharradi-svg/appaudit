@@ -12,6 +12,22 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
+### Accès depuis un autre poste sur le réseau local
+
+`npm run dev` affiche aussi une URL réseau (ex. `http://192.168.1.11:3000`). Pour que
+l'authentification et le reste de l'app fonctionnent depuis un autre poste (pas seulement
+l'affichage de la page), deux choses sont nécessaires :
+
+1. **Pare-feu Windows** : autoriser le port 3000 en entrée sur le poste qui exécute `npm run dev`
+   (Pare-feu Windows Defender → Règles de trafic entrant → Nouvelle règle → Port TCP 3000 →
+   Autoriser).
+2. **`allowedDevOrigins`** dans `next.config.ts` : Next.js bloque par défaut, en développement,
+   les requêtes internes (`/_next/*`) dont l'origine n'est pas `localhost` — sans ça, la page se
+   charge mais le JavaScript ne s'hydrate jamais et rien ne fonctionne (formulaires, connexion…).
+   L'adresse à lister est celle du **serveur** (l'IP affichée par `npm run dev`), pas celle du
+   poste client — chaque poste qui s'y connecte envoie cette même origine. Si l'IP réseau de la
+   machine qui héberge le serveur change, mettez à jour cette valeur.
+
 Au premier démarrage, deux comptes sont créés automatiquement (stockés dans `data/users.json`,
 non versionné) :
 
