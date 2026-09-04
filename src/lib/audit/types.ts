@@ -50,6 +50,8 @@ export interface AuditTemplate {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  /** Marks a seeded standard template so new ones can be added later without duplicating existing ones. */
+  standardKey?: string;
 }
 
 export interface AnswerEntry {

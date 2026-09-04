@@ -1,58 +1,82 @@
 import { randomUUID } from "crypto";
-import { buildDepotStandardSections, buildUsineStandardSections } from "@/lib/audit/standardTemplate";
+import {
+  buildContainerStandardSections,
+  buildDepotStandardSections,
+  buildUsineStandardSections,
+} from "@/lib/audit/standardTemplate";
 import { AuditTemplate, SectionDef } from "@/lib/audit/types";
 import { readCollection, writeCollection } from "./jsonStore";
 import { findAnySuperAdmin } from "./users";
 
 const COLLECTION = "templates";
 
-function buildStandardTemplate(
-  title: string,
-  description: string,
-  sections: SectionDef[],
-  creator: { id: string; name: string }
-): AuditTemplate {
+interface StandardTemplateDef {
+  key: string;
+  title: string;
+  description: string;
+  buildSections: () => SectionDef[];
+}
+
+// Adding a new entry here makes it appear automatically for every
+// installation (new or existing) — each is only ever created once,
+// tracked by `standardKey`, so re-running never duplicates it.
+const STANDARD_TEMPLATES: StandardTemplateDef[] = [
+  {
+    key: "usine",
+    title: "Audit industriel — Usine S2I",
+    description:
+      "Trame standard pour les audits usine : ventes, ordres de fabrication, machines/moules, matières premières, rebuts, recouvrement, RH et sécurité. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
+    buildSections: buildUsineStandardSections,
+  },
+  {
+    key: "depot",
+    title: "Audit logistique et commercial — Dépôt",
+    description:
+      "Trame standard pour les audits dépôt : inventaire stock, clôture de caisse, facturation/livraison, retours clients, organisation et recouvrement. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
+    buildSections: buildDepotStandardSections,
+  },
+  {
+    key: "container",
+    title: "Audit logistique — Déchargement de containers importés",
+    description:
+      "Grille de contrôle standard pour le déchargement des containers importés : contrôle documentaire avant ouverture, inspection de l'état général, comptage contradictoire et DLC, procédure en cas de non-conformité. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
+    buildSections: buildContainerStandardSections,
+  },
+];
+
+function buildStandardTemplate(def: StandardTemplateDef, creator: { id: string; name: string }): AuditTemplate {
   const now = new Date().toISOString();
   return {
     id: randomUUID(),
-    title,
-    description,
-    sections,
+    title: def.title,
+    description: def.description,
+    sections: def.buildSections(),
     isActive: false,
     createdBy: creator.id,
     createdByName: creator.name,
     createdAt: now,
     updatedAt: now,
+    standardKey: def.key,
   };
 }
 
-async function seedIfEmpty(templates: AuditTemplate[]): Promise<AuditTemplate[]> {
-  if (templates.length > 0) return templates;
+async function ensureStandardTemplates(templates: AuditTemplate[]): Promise<AuditTemplate[]> {
+  const existingKeys = new Set(templates.map((t) => t.standardKey).filter(Boolean));
+  const missing = STANDARD_TEMPLATES.filter((def) => !existingKeys.has(def.key));
+  if (missing.length === 0) return templates;
 
   const creator = await findAnySuperAdmin();
   if (!creator) return templates;
 
-  const standards = [
-    buildStandardTemplate(
-      "Audit industriel — Usine S2I",
-      "Trame standard pour les audits usine : ventes, ordres de fabrication, machines/moules, matières premières, rebuts, recouvrement, RH et sécurité. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
-      buildUsineStandardSections(),
-      creator
-    ),
-    buildStandardTemplate(
-      "Audit logistique et commercial — Dépôt",
-      "Trame standard pour les audits dépôt : inventaire stock, clôture de caisse, facturation/livraison, retours clients, organisation et recouvrement. Dupliquez-le pour créer un nouveau formulaire à partir de cette base.",
-      buildDepotStandardSections(),
-      creator
-    ),
-  ];
-  await writeCollection(COLLECTION, standards);
-  return standards;
+  const added = missing.map((def) => buildStandardTemplate(def, creator));
+  const next = [...templates, ...added];
+  await writeCollection(COLLECTION, next);
+  return next;
 }
 
 export async function listTemplates(): Promise<AuditTemplate[]> {
   const templates = await readCollection<AuditTemplate>(COLLECTION);
-  return seedIfEmpty(templates);
+  return ensureStandardTemplates(templates);
 }
 
 export async function getTemplate(id: string): Promise<AuditTemplate | null> {

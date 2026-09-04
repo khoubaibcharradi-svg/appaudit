@@ -311,3 +311,187 @@ export function buildDepotStandardSections(): SectionDef[] {
     ]),
   ];
 }
+
+/**
+ * Standard starting point for the container-unloading audit (imports),
+ * built from the control grid requested by the direction: documentary
+ * control before opening, general condition inspection, unloading and
+ * traceability, and the non-conformity procedure (photos, quarantine,
+ * non-conformity report to the Purchasing department).
+ */
+export function buildContainerStandardSections(): SectionDef[] {
+  const billOfLadingOk = q("Le Bill of Lading est-il conforme et disponible ?", "YES_NO", 3, true);
+  const billOfLadingDetail = q("Précisez l'anomalie constatée sur le Bill of Lading", "TEXT", 2, true, {
+    questionId: billOfLadingOk.id,
+    triggerValues: ["no"],
+  });
+  const sanitaryCertOk = q("Le certificat sanitaire est-il conforme et disponible ?", "YES_NO", 3, true);
+  const sanitaryCertDetail = q("Précisez l'anomalie constatée sur le certificat sanitaire", "TEXT", 2, true, {
+    questionId: sanitaryCertOk.id,
+    triggerValues: ["no"],
+  });
+  const originCertOk = q("Le certificat d'origine est-il conforme et disponible ?", "YES_NO", 3, true);
+  const originCertDetail = q("Précisez l'anomalie constatée sur le certificat d'origine", "TEXT", 2, true, {
+    questionId: originCertOk.id,
+    triggerValues: ["no"],
+  });
+  const packingListOk = q("Le Packing List est-il conforme et disponible ?", "YES_NO", 3, true);
+  const packingListDetail = q("Précisez l'anomalie constatée sur le Packing List", "TEXT", 2, true, {
+    questionId: packingListOk.id,
+    triggerValues: ["no"],
+  });
+  const otherDocuments = q(
+    "Autres documents contrôlés (facture, etc.) — précisez lesquels et leur conformité",
+    "TEXT",
+    1,
+    false
+  );
+  const sealPresent = q("Existe-t-il un plombage identifiable et numéroté ?", "YES_NO", 3, true);
+  const sealDetail = q(
+    "Précisez l'anomalie constatée (absence de plombage, numéro illisible…)",
+    "TEXT",
+    2,
+    true,
+    { questionId: sealPresent.id, triggerValues: ["no"] }
+  );
+  const sealNumber = q("Numéro du plombage relevé", "TEXT", 1, false);
+
+  const containerIntact = q(
+    "Le container est-il intact (absence d'ouvertures ou de fuites) ?",
+    "YES_NO",
+    3,
+    true
+  );
+  const containerIntactDetail = q("Précisez l'ouverture ou la fuite constatée", "TEXT", 2, true, {
+    questionId: containerIntact.id,
+    triggerValues: ["no"],
+  });
+  const doorsOpeningOk = q(
+    "L'ouverture des portes du container ne révèle-t-elle aucune anomalie ou suspicion ?",
+    "YES_NO",
+    3,
+    true
+  );
+  const doorsOpeningDetail = q("Précisez l'anomalie ou la suspicion constatée", "TEXT", 2, true, {
+    questionId: doorsOpeningOk.id,
+    triggerValues: ["no"],
+  });
+  const initialVisualOk = q(
+    "Le contrôle visuel initial confirme-t-il qu'aucun carton ou sac n'est ouvert ou endommagé ?",
+    "YES_NO",
+    2,
+    true
+  );
+  const initialVisualDetail = q(
+    "Précisez les cartons/sacs ouverts ou endommagés constatés",
+    "TEXT",
+    2,
+    true,
+    { questionId: initialVisualOk.id, triggerValues: ["no"] }
+  );
+
+  const countingMatch = q(
+    "Le comptage contradictoire correspond-il au Packing List (et aux autres documents : facture, Bill of Lading) ?",
+    "YES_NO",
+    3,
+    true
+  );
+  const countingGapDetail = q(
+    "Précisez l'écart constaté (référence, quantité)",
+    "TEXT",
+    2,
+    true,
+    { questionId: countingMatch.id, triggerValues: ["no"] }
+  );
+  const countingGapQty = q("Écart de quantité constaté (unités)", "NUMBER", 1, false, {
+    questionId: countingMatch.id,
+    triggerValues: ["no"],
+  });
+  const expiryDatesOk = q(
+    "Le contrôle des DLC par échantillonnage est-il conforme ?",
+    "YES_NO",
+    2,
+    true
+  );
+  const expiryDatesDetail = q(
+    "Précisez les références et DLC non conformes constatées",
+    "TEXT",
+    2,
+    true,
+    { questionId: expiryDatesOk.id, triggerValues: ["no"] }
+  );
+
+  const nonConformityFound = q(
+    "Une non-conformité a-t-elle été détectée durant cet audit ?",
+    "YES_NO",
+    3,
+    true
+  );
+  const nonConformityDescription = q(
+    "Description de la non-conformité constatée",
+    "TEXT",
+    2,
+    true,
+    { questionId: nonConformityFound.id, triggerValues: ["yes"] }
+  );
+  const photosTaken = q(
+    "Des photographies horodatées ont-elles été prises (scellé cassé, marchandise endommagée, container peu rempli…) ?",
+    "YES_NO",
+    2,
+    true,
+    { questionId: nonConformityFound.id, triggerValues: ["yes"] }
+  );
+  const quarantineApplied = q(
+    "Le lot a-t-il été bloqué en zone de quarantaine (non-conformité majeure) ?",
+    "YES_NO",
+    2,
+    true,
+    { questionId: nonConformityFound.id, triggerValues: ["yes"] }
+  );
+  const nonConformityReportSent = q(
+    "Une fiche de non-conformité a-t-elle été émise et transmise à la Direction des Achats ?",
+    "YES_NO",
+    3,
+    true,
+    { questionId: nonConformityFound.id, triggerValues: ["yes"] }
+  );
+
+  return [
+    section("Contrôle documentaire (avant ouverture)", [
+      billOfLadingOk,
+      billOfLadingDetail,
+      sanitaryCertOk,
+      sanitaryCertDetail,
+      originCertOk,
+      originCertDetail,
+      packingListOk,
+      packingListDetail,
+      otherDocuments,
+      sealPresent,
+      sealDetail,
+      sealNumber,
+    ]),
+    section("Inspection de l'état général du container", [
+      containerIntact,
+      containerIntactDetail,
+      doorsOpeningOk,
+      doorsOpeningDetail,
+      initialVisualOk,
+      initialVisualDetail,
+    ]),
+    section("Opérations de déchargement et traçabilité", [
+      countingMatch,
+      countingGapDetail,
+      countingGapQty,
+      expiryDatesOk,
+      expiryDatesDetail,
+    ]),
+    section("Procédure en cas de non-conformité", [
+      nonConformityFound,
+      nonConformityDescription,
+      photosTaken,
+      quarantineApplied,
+      nonConformityReportSent,
+    ]),
+  ];
+}

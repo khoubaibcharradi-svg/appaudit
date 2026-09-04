@@ -38,8 +38,8 @@ non versionné) :
 
 Ces identifiants sont personnalisables via les variables d'environnement `SEED_ADMIN_EMAIL`,
 `SEED_ADMIN_PASSWORD`, `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD` (voir `.env.example`).
-Deux formulaires standards (voir plus bas) sont aussi créés automatiquement au premier
-démarrage.
+Les formulaires standards (voir plus bas) sont aussi créés automatiquement — y compris ceux
+ajoutés après le premier démarrage, sur une installation déjà en service.
 
 ## Rôles
 
@@ -58,12 +58,17 @@ démarrage.
   texte, nombre). Une question peut être définie comme « question de suivi » qui n'apparaît que
   si une question précédente reçoit une réponse déclenchante — le questionnaire vu par le
   personnel est donc généré dynamiquement au fil des réponses.
-- **Modèles standards** : deux formulaires de base sont seedés au premier démarrage, construits
-  à partir des audits réels fournis :
+- **Modèles standards** : des formulaires de base construits à partir des audits réels fournis
+  sont créés automatiquement (dès qu'un compte superadmin existe) et complétés à chaque ajout
+  d'un nouveau modèle, même sur une installation déjà en service (`standardKey` évite les
+  doublons — voir `src/lib/store/templates.ts`) :
   - « Audit industriel — Usine S2I » (ventes, ordres de fabrication, machines/moules, matières
     premières, rebuts, recouvrement, RH, hygiène/sécurité) ;
   - « Audit logistique et commercial — Dépôt » (inventaire stock, clôture de caisse, facturation
-    et retours clients, organisation, recouvrement et effets).
+    et retours clients, organisation, recouvrement et effets) ;
+  - « Audit logistique — Déchargement de containers importés » (contrôle documentaire avant
+    ouverture, inspection de l'état général, comptage contradictoire et DLC, procédure en cas de
+    non-conformité avec photos/quarantaine/fiche transmise aux Achats).
 
   Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
