@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import { canAccessInventory } from "@/lib/audit/permissions";
 import { getInventory } from "@/lib/store/inventories";
 import { getMission } from "@/lib/store/missions";
+import { listProducts } from "@/lib/store/products";
 
 export default async function InventoryPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -16,6 +17,8 @@ export default async function InventoryPage({ params }: { params: Promise<{ id: 
   const mission = await getMission(inventory.missionId);
   if (!mission || !canAccessInventory(session, mission)) notFound();
 
+  const products = await listProducts();
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -26,7 +29,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ id: 
           {mission.assignedToName}
         </p>
       </div>
-      <InventoryWorkspace inventory={inventory} />
+      <InventoryWorkspace inventory={inventory} products={products} />
     </div>
   );
 }
