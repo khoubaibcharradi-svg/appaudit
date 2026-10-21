@@ -63,7 +63,6 @@ CREATE TABLE IF NOT EXISTS submissions (
   filled_by_name VARCHAR(255) NOT NULL,
   status VARCHAR(32) NOT NULL,
   answers JSON NOT NULL,
-  inventory_counts JSON NULL,
   created_at VARCHAR(32) NOT NULL,
   submitted_at VARCHAR(32) NULL,
   INDEX idx_submissions_template (template_id),
@@ -73,9 +72,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   CONSTRAINT fk_submissions_site FOREIGN KEY (site_code) REFERENCES sites (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Added after the initial release — applies on top of an already-created
--- `submissions` table without requiring a drop.
-ALTER TABLE submissions ADD COLUMN IF NOT EXISTS inventory_counts JSON NULL;
+-- Dropped after the inventory workflow moved to its own `inventories` table
+-- (JSON photo/counts/rapprochement) — applies on top of an already-created
+-- `submissions` table without requiring a drop of the whole database.
+ALTER TABLE submissions DROP COLUMN IF EXISTS inventory_counts;
 
 CREATE TABLE IF NOT EXISTS missions (
   id CHAR(36) PRIMARY KEY,
@@ -119,20 +119,6 @@ CREATE TABLE IF NOT EXISTS products (
   prix_vente_5 DECIMAL(10,3) NULL,
   prix_vente_6 DECIMAL(10,3) NULL,
   INDEX idx_products_famille (famille)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Storage locations (magasins) under a site: the site's own fixed warehouse
--- plus its trucks (mobile sub-depots). `code` is the real SAP "code
--- magasin" (free text, e.g. "50", "01-PFG", "C1"), matching the Excel
--- Parametres sheet.
-CREATE TABLE IF NOT EXISTS storage_locations (
-  code VARCHAR(50) PRIMARY KEY,
-  site_code VARCHAR(20) NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  nature ENUM('FIXE', 'MOBILE') NOT NULL,
-  societe VARCHAR(50) NULL,
-  INDEX idx_storage_locations_site (site_code),
-  CONSTRAINT fk_storage_locations_site FOREIGN KEY (site_code) REFERENCES sites (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- One inventory session per mission with isInventory=true: blind physical

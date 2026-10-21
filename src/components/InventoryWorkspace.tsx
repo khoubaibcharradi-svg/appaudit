@@ -2,12 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
-import { Inventory, PhysicalCount, Product, StorageLocation } from "@/lib/audit/types";
+import { Inventory, PhysicalCount } from "@/lib/audit/types";
 
 interface Props {
   inventory: Inventory;
-  locations: StorageLocation[];
-  products: Product[];
 }
 
 function countsToMap(counts: PhysicalCount[]): Record<string, string> {
@@ -16,7 +14,7 @@ function countsToMap(counts: PhysicalCount[]): Record<string, string> {
   return map;
 }
 
-export default function InventoryWorkspace({ inventory, locations, products }: Props) {
+export default function InventoryWorkspace({ inventory }: Props) {
   const router = useRouter();
   const isOpen = inventory.status === "EN_COURS";
   const [selected, setSelected] = useState<string[]>(inventory.selectedLocations);
@@ -26,10 +24,23 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
   const [saving, setSaving] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const selectedLocations = useMemo(
-    () => locations.filter((l) => selected.includes(l.code)),
-    [locations, selected]
-  );
+  // Magasins and articles come from the imported SAP photo itself, not a
+  // separately maintained catalog — matching the source workbooks, where
+  // the "Photo SAP" query result is both the list of magasins and articles.
+  const availableMagasins = useMemo(() => {
+    const names = new Set(inventory.sapPhoto.map((r) => r.codeMagasin).filter(Boolean));
+    return Array.from(names).sort();
+  }, [inventory.sapPhoto]);
+
+  const articles = useMemo(() => {
+    const byCode = new Map<string, string>();
+    for (const row of inventory.sapPhoto) {
+      if (!byCode.has(row.codeArticle)) byCode.set(row.codeArticle, row.designation);
+    }
+    return Array.from(byCode.entries())
+      .map(([code, designation]) => ({ code, designation }))
+      .sort((a, b) => a.designation.localeCompare(b.designation));
+  }, [inventory.sapPhoto]);
 
   function toggleLocation(code: string) {
     setSelected((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
@@ -131,55 +142,14 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       {notice && <p className="text-sm text-emerald-600 dark:text-emerald-400">{notice}</p>}
 
-      <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
-        <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Magasins à inventorier</h2>
-        {locations.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">
-            Aucun magasin pour ce site. Ajoutez-en depuis « Sites » dans le menu admin.
-          </p>
-        ) : (
-          <>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {locations.map((l) => (
-                <label
-                  key={l.code}
-                  className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    selected.includes(l.code)
-                      ? "border-brand bg-brand text-white"
-                      : "border-black/[.12] text-zinc-700 hover:bg-black/[.04] dark:border-white/[.2] dark:text-zinc-300 dark:hover:bg-white/[.08]"
-                  } ${!isOpen ? "pointer-events-none opacity-70" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(l.code)}
-                    onChange={() => toggleLocation(l.code)}
-                    disabled={!isOpen}
-                    className="sr-only"
-                  />
-                  {l.name} ({l.nature === "MOBILE" ? "mobile" : "fixe"})
-                </label>
-              ))}
-            </div>
-            {isOpen && (
-              <button
-                onClick={saveLocations}
-                disabled={saving === "locations"}
-                className="mt-4 rounded-full border border-black/[.12] px-4 py-1.5 text-sm font-medium hover:bg-black/[.04] disabled:opacity-40 dark:border-white/[.2] dark:hover:bg-white/[.08]"
-              >
-                {saving === "locations" ? "Enregistrement…" : "Enregistrer la sélection"}
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
       {isOpen && (
         <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
-          <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Photo SAP</h2>
+          <h2 className="text-sm font-semibold text-black dark:text-zinc-50">1. Photo SAP</h2>
           <p className="mt-1 text-xs text-zinc-500">
             Fichier Excel/CSV avec les colonnes Société, Code magasin, Code article, Désignation, Qté
-            SAP, CMUP — comme votre feuille « Photo SAP ». Utilisé uniquement au rapprochement, pas
-            affiché pendant le comptage (comptage à l&apos;aveugle).
+            SAP, CMUP — comme votre feuille « Photo SAP ». Les magasins et articles à inventorier en
+            sont extraits automatiquement ; la quantité SAP n&apos;est jamais affichée pendant le
+            comptage (comptage à l&apos;aveugle).
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <input
@@ -203,37 +173,75 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
       )}
 
       <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
-        <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Comptage à l&apos;aveugle</h2>
-        {selectedLocations.length === 0 ? (
+        <h2 className="text-sm font-semibold text-black dark:text-zinc-50">2. Magasins à inventorier</h2>
+        {availableMagasins.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-500">Importez d&apos;abord la photo SAP ci-dessus.</p>
+        ) : (
+          <>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {availableMagasins.map((code) => (
+                <label
+                  key={code}
+                  className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selected.includes(code)
+                      ? "border-brand bg-brand text-white"
+                      : "border-black/[.12] text-zinc-700 hover:bg-black/[.04] dark:border-white/[.2] dark:text-zinc-300 dark:hover:bg-white/[.08]"
+                  } ${!isOpen ? "pointer-events-none opacity-70" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(code)}
+                    onChange={() => toggleLocation(code)}
+                    disabled={!isOpen}
+                    className="sr-only"
+                  />
+                  {code}
+                </label>
+              ))}
+            </div>
+            {isOpen && (
+              <button
+                onClick={saveLocations}
+                disabled={saving === "locations"}
+                className="mt-4 rounded-full border border-black/[.12] px-4 py-1.5 text-sm font-medium hover:bg-black/[.04] disabled:opacity-40 dark:border-white/[.2] dark:hover:bg-white/[.08]"
+              >
+                {saving === "locations" ? "Enregistrement…" : "Enregistrer la sélection"}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
+        <h2 className="text-sm font-semibold text-black dark:text-zinc-50">3. Comptage à l&apos;aveugle</h2>
+        {selected.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500">Sélectionnez au moins un magasin ci-dessus.</p>
-        ) : products.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">
-            Aucun article dans le catalogue produits. Ajoutez-en depuis « Produits » dans le menu admin.
-          </p>
+        ) : articles.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-500">Aucun article dans la photo SAP importée.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-sm">
               <thead>
                 <tr className="border-b border-black/[.08] dark:border-white/[.145]">
                   <th className="px-2 py-2 text-left font-medium text-zinc-500">Article</th>
-                  {selectedLocations.map((l) => (
-                    <th key={l.code} className="px-2 py-2 text-left font-medium text-zinc-500">
-                      {l.name}
+                  {selected.map((code) => (
+                    <th key={code} className="px-2 py-2 text-left font-medium text-zinc-500">
+                      {code}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {products.map((p) => (
-                  <tr key={p.code} className="border-b border-black/[.06] dark:border-white/[.08]">
+                {articles.map((a) => (
+                  <tr key={a.code} className="border-b border-black/[.06] dark:border-white/[.08]">
                     <td className="px-2 py-2">
-                      <p className="text-black dark:text-zinc-50">{p.designation}</p>
-                      <p className="text-xs text-zinc-500">{p.code}</p>
+                      <p className="text-black dark:text-zinc-50">{a.designation}</p>
+                      <p className="text-xs text-zinc-500">{a.code}</p>
                     </td>
-                    {selectedLocations.map((l) => {
-                      const key = `${l.code}__${p.code}`;
+                    {selected.map((code) => {
+                      const key = `${code}__${a.code}`;
                       return (
-                        <td key={l.code} className="px-2 py-2">
+                        <td key={code} className="px-2 py-2">
                           <input
                             type="number"
                             min="0"
@@ -252,7 +260,7 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
             </table>
           </div>
         )}
-        {isOpen && selectedLocations.length > 0 && products.length > 0 && (
+        {isOpen && selected.length > 0 && articles.length > 0 && (
           <button
             onClick={saveCounts}
             disabled={saving === "counts"}
@@ -283,14 +291,10 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
                 {inventory.closedAt && new Date(inventory.closedAt).toLocaleString("fr-FR")}
               </span>
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <StatTile label="Écart net valorisé" value={`${inventory.rapprochement.totals.ecartNetValorise.toFixed(3)} DT`} />
               <StatTile label="Total des manquants" value={`${inventory.rapprochement.totals.totalManquants.toFixed(3)} DT`} />
               <StatTile label="Total des excédents" value={`${inventory.rapprochement.totals.totalExcedents.toFixed(3)} DT`} />
-              <StatTile
-                label="Articles SAP hors liste"
-                value={String(inventory.rapprochement.totals.articlesSapHorsListe)}
-              />
             </div>
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-max border-collapse text-sm">
@@ -301,6 +305,11 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
                     <th className="px-2 py-2 font-medium">Qté physique</th>
                     <th className="px-2 py-2 font-medium">Écart qté</th>
                     <th className="px-2 py-2 font-medium">Écart valorisé</th>
+                    {inventory.selectedLocations.map((code) => (
+                      <th key={code} className="px-2 py-2 font-medium">
+                        Écart {code}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -318,6 +327,16 @@ export default function InventoryWorkspace({ inventory, locations, products }: P
                       <td className={`px-2 py-2 ${l.ecartValorise < 0 ? "text-red-600 dark:text-red-400" : ""}`}>
                         {l.ecartValorise.toFixed(3)} DT
                       </td>
+                      {inventory.selectedLocations.map((code) => (
+                        <td
+                          key={code}
+                          className={`px-2 py-2 ${
+                            (l.ecartParMagasin[code] ?? 0) < 0 ? "text-red-600 dark:text-red-400" : ""
+                          }`}
+                        >
+                          {l.ecartParMagasin[code] ?? 0}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>

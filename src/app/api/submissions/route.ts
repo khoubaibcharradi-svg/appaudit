@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
-import { AnswerEntry, AuditMission, InventoryCount } from "@/lib/audit/types";
+import { AnswerEntry, AuditMission } from "@/lib/audit/types";
 import { getVisibleQuestions } from "@/lib/audit/visibility";
+import { getInventoryByMissionId } from "@/lib/store/inventories";
 import { getMission, markMissionSubmitted } from "@/lib/store/missions";
 import { findSiteByCode } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
@@ -17,7 +18,6 @@ export async function POST(request: NextRequest) {
   const siteCode = typeof body?.siteCode === "string" ? body.siteCode.trim() : "";
   const missionId = typeof body?.missionId === "string" ? body.missionId : undefined;
   const rawAnswers: unknown[] = Array.isArray(body?.answers) ? body.answers : [];
-  const rawInventory: unknown[] = Array.isArray(body?.inventoryCounts) ? body.inventoryCounts : [];
 
   if (!templateId) return NextResponse.json({ error: "Formulaire manquant." }, { status: 400 });
 
@@ -35,6 +35,15 @@ export async function POST(request: NextRequest) {
     }
     if (mission.status === "TERMINEE") {
       return NextResponse.json({ error: "Cette mission a déjà été réalisée." }, { status: 400 });
+    }
+    if (mission.isInventory) {
+      const inventory = await getInventoryByMissionId(mission.id);
+      if (!inventory || inventory.status !== "CLOTURE") {
+        return NextResponse.json(
+          { error: "Clôturez d'abord l'inventaire avant de soumettre l'audit." },
+          { status: 400 }
+        );
+      }
     }
     site = { code: mission.siteCode, name: mission.site };
   } else {
@@ -65,20 +74,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const inventoryCounts: InventoryCount[] | undefined = mission?.isInventory
-    ? rawInventory
-        .filter(
-          (c: unknown): c is InventoryCount =>
-            typeof c === "object" &&
-            c !== null &&
-            typeof (c as InventoryCount).productCode === "string" &&
-            Number.isFinite((c as InventoryCount).quantity)
-        )
-        .map((c) => ({ productCode: c.productCode, quantity: c.quantity }))
-    : undefined;
-
   const submission = await createSubmission(
-    { templateId, templateTitle: template.title, siteCode: site.code, site: site.name, answers, inventoryCounts },
+    { templateId, templateTitle: template.title, siteCode: site.code, site: site.name, answers },
     { codeUser: session.sub, name: session.name }
   );
 

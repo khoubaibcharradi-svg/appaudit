@@ -61,11 +61,6 @@ export interface AnswerEntry {
 
 export type SubmissionStatus = "DRAFT" | "SUBMITTED";
 
-export interface InventoryCount {
-  productCode: string;
-  quantity: number;
-}
-
 export interface Submission {
   id: string;
   templateId: string;
@@ -76,7 +71,6 @@ export interface Submission {
   filledByName: string;
   status: SubmissionStatus;
   answers: AnswerEntry[];
-  inventoryCounts?: InventoryCount[];
   createdAt: string;
   submittedAt?: string;
 }
@@ -140,15 +134,6 @@ export interface Product {
   prixVente6?: number;
 }
 
-/** A storage location (magasin) under a site: its own fixed warehouse, or one of its trucks. */
-export interface StorageLocation {
-  code: string;
-  siteCode: string;
-  name: string;
-  nature: DepotNature;
-  societe?: string;
-}
-
 /** One row of an imported SAP stock snapshot ("photo SAP"). */
 export interface SapPhotoRow {
   societe?: string;
@@ -175,14 +160,14 @@ export interface RapprochementLine {
   qtePhysiqueTotale: number;
   ecartQte: number;
   ecartValorise: number;
+  /** Quantity gap (physique - SAP) per selected magasin, e.g. { "DEPOT SFAX": -12, "C10": -3 }. */
+  ecartParMagasin: Record<string, number>;
 }
 
 export interface RapprochementTotals {
   ecartNetValorise: number;
   totalManquants: number;
   totalExcedents: number;
-  /** Articles present in the SAP photo but absent from the product catalog — should be 0. */
-  articlesSapHorsListe: number;
 }
 
 export interface Rapprochement {

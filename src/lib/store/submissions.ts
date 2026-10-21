@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2/promise";
-import { AnswerEntry, InventoryCount, Submission } from "@/lib/audit/types";
+import { AnswerEntry, Submission } from "@/lib/audit/types";
 import pool, { ensureSchema } from "@/lib/db/pool";
 import { logger } from "@/lib/logger";
 
@@ -14,7 +14,6 @@ interface SubmissionRow extends RowDataPacket {
   filled_by_name: string;
   status: Submission["status"];
   answers: AnswerEntry[] | string;
-  inventory_counts: InventoryCount[] | string | null;
   created_at: string;
   submitted_at: string | null;
 }
@@ -35,7 +34,6 @@ function mapSubmission(row: SubmissionRow): Submission {
     filledByName: row.filled_by_name,
     status: row.status,
     answers: parseJsonColumn<AnswerEntry[]>(row.answers) ?? [],
-    inventoryCounts: parseJsonColumn<InventoryCount[]>(row.inventory_counts),
     createdAt: row.created_at,
     submittedAt: row.submitted_at ?? undefined,
   };
@@ -77,7 +75,6 @@ export interface SubmissionInput {
   siteCode: string;
   site: string;
   answers: AnswerEntry[];
-  inventoryCounts?: InventoryCount[];
 }
 
 export async function createSubmission(
@@ -96,14 +93,13 @@ export async function createSubmission(
     filledByName: author.name,
     status: "SUBMITTED",
     answers: input.answers,
-    inventoryCounts: input.inventoryCounts,
     createdAt: now,
     submittedAt: now,
   };
   await pool.query(
     `INSERT INTO submissions
-       (id, template_id, template_title, site_code, site, filled_by, filled_by_name, status, answers, inventory_counts, created_at, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, template_id, template_title, site_code, site, filled_by, filled_by_name, status, answers, created_at, submitted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       submission.id,
       submission.templateId,
@@ -114,7 +110,6 @@ export async function createSubmission(
       submission.filledByName,
       submission.status,
       JSON.stringify(submission.answers),
-      submission.inventoryCounts ? JSON.stringify(submission.inventoryCounts) : null,
       submission.createdAt,
       submission.submittedAt,
     ]
@@ -123,7 +118,6 @@ export async function createSubmission(
     id: submission.id,
     templateId: submission.templateId,
     site: submission.site,
-    inventory: Boolean(submission.inventoryCounts),
     by: author.codeUser,
   });
   return submission;

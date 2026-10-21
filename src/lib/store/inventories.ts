@@ -168,35 +168,64 @@ export async function updateCounts(id: string, counts: PhysicalCount[]): Promise
 function computeRapprochement(
   photo: SapPhotoRow[],
   counts: PhysicalCount[],
+  selectedLocations: string[],
   products: Product[]
 ): Rapprochement {
   const productByCode = new Map(products.map((p) => [p.code, p]));
+  const inScope = new Set(selectedLocations);
+  const scopedPhoto = photo.filter((row) => inScope.has(row.codeMagasin));
+  const scopedCounts = counts.filter((c) => inScope.has(c.locationCode));
 
   const qteSapByArticle = new Map<string, number>();
+  const qteSapByArticleMagasin = new Map<string, Map<string, number>>();
   const cmupByArticle = new Map<string, number>();
   const designationByArticle = new Map<string, string>();
-  for (const row of photo) {
+  for (const row of scopedPhoto) {
     qteSapByArticle.set(row.codeArticle, (qteSapByArticle.get(row.codeArticle) ?? 0) + row.qteSap);
+    if (!qteSapByArticleMagasin.has(row.codeArticle)) qteSapByArticleMagasin.set(row.codeArticle, new Map());
+    const byMagasin = qteSapByArticleMagasin.get(row.codeArticle)!;
+    byMagasin.set(row.codeMagasin, (byMagasin.get(row.codeMagasin) ?? 0) + row.qteSap);
     if (row.cmup !== undefined) cmupByArticle.set(row.codeArticle, row.cmup);
     designationByArticle.set(row.codeArticle, row.designation);
   }
 
   const qtePhysiqueByArticle = new Map<string, number>();
-  for (const c of counts) {
+  const qtePhysiqueByArticleMagasin = new Map<string, Map<string, number>>();
+  for (const c of scopedCounts) {
     qtePhysiqueByArticle.set(c.productCode, (qtePhysiqueByArticle.get(c.productCode) ?? 0) + c.quantity);
+    if (!qtePhysiqueByArticleMagasin.has(c.productCode)) qtePhysiqueByArticleMagasin.set(c.productCode, new Map());
+    const byMagasin = qtePhysiqueByArticleMagasin.get(c.productCode)!;
+    byMagasin.set(c.locationCode, (byMagasin.get(c.locationCode) ?? 0) + c.quantity);
   }
 
   const articleCodes = new Set([...qteSapByArticle.keys(), ...qtePhysiqueByArticle.keys()]);
   const lines: RapprochementLine[] = [];
   for (const code of articleCodes) {
     const product = productByCode.get(code);
-    const designation = product?.designation ?? designationByArticle.get(code) ?? code;
+    const designation = designationByArticle.get(code) ?? product?.designation ?? code;
     const cmup = cmupByArticle.get(code) ?? product?.prixAchat;
     const qteSapTotale = qteSapByArticle.get(code) ?? 0;
     const qtePhysiqueTotale = qtePhysiqueByArticle.get(code) ?? 0;
     const ecartQte = qtePhysiqueTotale - qteSapTotale;
     const ecartValorise = cmup !== undefined ? ecartQte * cmup : 0;
-    lines.push({ codeArticle: code, designation, cmup, qteSapTotale, qtePhysiqueTotale, ecartQte, ecartValorise });
+
+    const ecartParMagasin: Record<string, number> = {};
+    for (const magasin of selectedLocations) {
+      const sap = qteSapByArticleMagasin.get(code)?.get(magasin) ?? 0;
+      const physique = qtePhysiqueByArticleMagasin.get(code)?.get(magasin) ?? 0;
+      ecartParMagasin[magasin] = physique - sap;
+    }
+
+    lines.push({
+      codeArticle: code,
+      designation,
+      cmup,
+      qteSapTotale,
+      qtePhysiqueTotale,
+      ecartQte,
+      ecartValorise,
+      ecartParMagasin,
+    });
   }
   lines.sort((a, b) => a.codeArticle.localeCompare(b.codeArticle));
 
@@ -205,7 +234,6 @@ function computeRapprochement(
     .filter((l) => l.ecartValorise < 0)
     .reduce((sum, l) => sum + Math.abs(l.ecartValorise), 0);
   const totalExcedents = lines.filter((l) => l.ecartValorise > 0).reduce((sum, l) => sum + l.ecartValorise, 0);
-  const articlesSapHorsListe = Array.from(qteSapByArticle.keys()).filter((code) => !productByCode.has(code)).length;
 
   const topEcarts = lines
     .filter((l) => l.ecartValorise < 0)
@@ -214,7 +242,7 @@ function computeRapprochement(
 
   return {
     lines,
-    totals: { ecartNetValorise, totalManquants, totalExcedents, articlesSapHorsListe },
+    totals: { ecartNetValorise, totalManquants, totalExcedents },
     topEcarts,
   };
 }
@@ -226,7 +254,12 @@ export async function closeInventory(id: string, closer: { codeUser: string; nam
   assertOpen(inventory);
 
   const products = await listProducts();
-  const rapprochement = computeRapprochement(inventory.sapPhoto, inventory.counts, products);
+  const rapprochement = computeRapprochement(
+    inventory.sapPhoto,
+    inventory.counts,
+    inventory.selectedLocations,
+    products
+  );
   const closedAt = new Date().toISOString();
 
   await pool.query(

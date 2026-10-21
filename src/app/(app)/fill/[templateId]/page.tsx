@@ -49,7 +49,13 @@ export default async function FillTemplatePage({
         <h1 className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">{template.title}</h1>
         {template.description && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{template.description}</p>}
       </div>
-      <FillForm template={template} mission={mission ?? undefined} sites={sites} inventoryId={inventory?.id} />
+      <FillForm
+        template={template}
+        mission={mission ?? undefined}
+        sites={sites}
+        inventoryId={inventory?.id}
+        inventoryStatus={inventory?.status}
+      />
     </div>
   );
 }

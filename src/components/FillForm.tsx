@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AuditMission, AuditTemplate, QuestionDef, SCALE_OPTIONS, Site, YES_NO_OPTIONS } from "@/lib/audit/types";
+import {
+  AuditMission,
+  AuditTemplate,
+  InventoryStatus,
+  QuestionDef,
+  SCALE_OPTIONS,
+  Site,
+  YES_NO_OPTIONS,
+} from "@/lib/audit/types";
 import { allQuestions, isQuestionVisible } from "@/lib/audit/visibility";
 
 interface Props {
@@ -11,9 +19,10 @@ interface Props {
   mission?: AuditMission;
   sites: Site[];
   inventoryId?: string;
+  inventoryStatus?: InventoryStatus;
 }
 
-export default function FillForm({ template, mission, sites, inventoryId }: Props) {
+export default function FillForm({ template, mission, sites, inventoryId, inventoryStatus }: Props) {
   const router = useRouter();
   const [siteCode, setSiteCode] = useState(mission?.siteCode ?? sites[0]?.code ?? "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -21,6 +30,7 @@ export default function FillForm({ template, mission, sites, inventoryId }: Prop
   const [saving, setSaving] = useState(false);
 
   const isInventory = Boolean(mission?.isInventory);
+  const inventoryLocked = isInventory && inventoryStatus !== "CLOTURE";
 
   const visibleIds = useMemo(() => {
     const all = allQuestions(template.sections);
@@ -112,14 +122,21 @@ export default function FillForm({ template, mission, sites, inventoryId }: Prop
       </div>
 
       {isInventory && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-900 dark:bg-blue-950/30">
+        <div
+          className={`flex items-center justify-between gap-3 rounded-2xl border p-6 ${
+            inventoryLocked
+              ? "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30"
+              : "border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30"
+          }`}
+        >
           <div>
             <h2 className="text-sm font-semibold text-black dark:text-zinc-50">
               Inventaire — comptage produits
             </h2>
             <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-              Cette mission comprend une tâche d&apos;inventaire : import de la photo SAP, sélection
-              des magasins et comptage se font dans l&apos;espace Inventaires.
+              {inventoryLocked
+                ? "Terminez et clôturez l'inventaire avant de répondre aux questions de l'audit."
+                : "Inventaire clôturé — vous pouvez répondre aux questions ci-dessous."}
             </p>
           </div>
           {inventoryId && (
@@ -133,51 +150,55 @@ export default function FillForm({ template, mission, sites, inventoryId }: Prop
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-zinc-500">
-        <span>
-          {answeredRequired} / {visibleRequired.length} questions obligatoires répondues
-        </span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.1]">
-        <div
-          className="h-full rounded-full bg-brand transition-all"
-          style={{ width: `${visibleRequired.length ? (answeredRequired / visibleRequired.length) * 100 : 0}%` }}
-        />
-      </div>
-
-      {template.sections.map((section) => {
-        const visibleQuestions = section.questions.filter((q) => visibleIds.has(q.id));
-        if (visibleQuestions.length === 0) return null;
-        return (
-          <div
-            key={section.id}
-            className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950"
-          >
-            <h2 className="text-sm font-semibold text-black dark:text-zinc-50">{section.label}</h2>
-            <div className="mt-4 flex flex-col gap-4">
-              {visibleQuestions.map((q) => (
-                <QuestionField
-                  key={q.id}
-                  question={q}
-                  isFollowUp={Boolean(q.dependsOn)}
-                  value={answers[q.id]}
-                  onChange={(v) => setAnswer(q.id, v)}
-                />
-              ))}
-            </div>
+      {!inventoryLocked && (
+        <>
+          <div className="flex items-center justify-between text-xs text-zinc-500">
+            <span>
+              {answeredRequired} / {visibleRequired.length} questions obligatoires répondues
+            </span>
           </div>
-        );
-      })}
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.1]">
+            <div
+              className="h-full rounded-full bg-brand transition-all"
+              style={{ width: `${visibleRequired.length ? (answeredRequired / visibleRequired.length) * 100 : 0}%` }}
+            />
+          </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {template.sections.map((section) => {
+            const visibleQuestions = section.questions.filter((q) => visibleIds.has(q.id));
+            if (visibleQuestions.length === 0) return null;
+            return (
+              <div
+                key={section.id}
+                className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950"
+              >
+                <h2 className="text-sm font-semibold text-black dark:text-zinc-50">{section.label}</h2>
+                <div className="mt-4 flex flex-col gap-4">
+                  {visibleQuestions.map((q) => (
+                    <QuestionField
+                      key={q.id}
+                      question={q}
+                      isFollowUp={Boolean(q.dependsOn)}
+                      value={answers[q.id]}
+                      onChange={(v) => setAnswer(q.id, v)}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
 
-      <button
-        onClick={handleSubmit}
-        disabled={saving}
-        className="flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        {saving ? "Envoi…" : "Soumettre l'audit"}
-      </button>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saving ? "Envoi…" : "Soumettre l'audit"}
+          </button>
+        </>
+      )}
     </div>
   );
 }

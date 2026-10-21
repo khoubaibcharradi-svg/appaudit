@@ -92,13 +92,13 @@ pour avoir tout de suite un exemple concret à l'écran.
 
   Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
-- **Sites** (`/admin/sites`) : usine ou dépôt. Un dépôt regroupe un ou plusieurs **magasins**
-  (table `storage_locations`) : son entrepôt fixe et ses camions (dépôts mobiles) — ce sont ces
-  magasins qui sont sélectionnés lors d'un inventaire, pas le site lui-même. L'interface admin
-  permet d'ajouter des sites (nom, type, région optionnelle, code) et des magasins par site (code
-  magasin SAP, nom, nature fixe/mobile, société optionnelle). Les sites réels du département
-  (Usine S2I, Dépôts Radès/Tazarka/Sousse/Sfax/Jendouba/Kram/Charguia/Charguia Proxim) sont créés
-  automatiquement au premier accès ; les magasins (camions compris) s'ajoutent ensuite à la main.
+- **Sites** (`/admin/sites`) : usine, dépôt fixe ou dépôt mobile (camion). L'interface admin permet
+  d'ajouter un site (nom, type, nature, région optionnelle, code suggéré automatiquement). Les sites
+  réels du département (Usine S2I, Dépôts Radès/Tazarka/Sousse/Sfax/Jendouba/Kram/Charguia/Charguia
+  Proxim) sont créés automatiquement au premier accès. Les **magasins** d'un inventaire (entrepôt,
+  camions — ex. « DEPOT SFAX », « C10 ») ne sont pas un catalogue géré à part : ils sont extraits
+  automatiquement des codes magasin distincts présents dans la photo SAP importée pour chaque
+  inventaire (voir ci-dessous), exactement comme dans les fichiers Excel d'origine.
 - **Produits** (`/admin/products`) : catalogue utilisé par la tâche d'inventaire — code article
   (le code réel, ex. SAP, saisi librement : pas de format imposé contrairement aux matricules et
   codes site), désignation, famille, colisage et jusqu'à 6 prix de vente en plus du prix d'achat.
@@ -110,20 +110,26 @@ pour avoir tout de suite un exemple concret à l'écran.
   à « Terminée » et pointe vers le résultat.
   - **Tâche d'inventaire** : case à cocher « Faire un inventaire » à la création. Si cochée, un
     inventaire est automatiquement créé pour cette mission (voir ci-dessous) ; un bandeau dans le
-    formulaire de remplissage y renvoie.
+    formulaire de remplissage y renvoie. **Tant que l'inventaire n'est pas clôturé, les questions de
+    l'audit et le bouton de soumission ne s'affichent pas du tout** (pas seulement désactivés) — il
+    faut d'abord terminer et clôturer l'inventaire pour pouvoir y répondre ; ce verrou est aussi
+    vérifié côté serveur à la soumission.
 - **Inventaires** (`/inventaires`) : comptage physique façon Excel, rattaché à une mission.
-  - **Sélection des magasins** : parmi les magasins du site de la mission (entrepôt fixe, camions).
   - **Import de la photo SAP** : fichier Excel/CSV (colonnes Société, Code magasin, Code article,
     Désignation, Qté SAP, CMUP — mêmes en-têtes que la feuille « Photo SAP »). Non affiché pendant
     le comptage : c'est un comptage à l'aveugle, comme dans les fichiers d'origine.
-  - **Comptage** : une grille article × magasin sélectionné, quantité physique par case.
+  - **Sélection des magasins** : la liste à cocher est générée automatiquement à partir des codes
+    magasin distincts trouvés dans la photo importée (ex. « DEPOT SFAX », « C10 », « C11 ») — rien
+    à configurer à l'avance.
+  - **Comptage** : une grille article × magasin sélectionné, quantité physique par case ; les
+    articles proviennent eux aussi des codes article distincts de la photo importée.
   - **Clôture** : fige la sélection et le comptage, puis calcule et affiche le **rapprochement**
-    (écart quantité et valorisé par article, écart net valorisé, total des manquants/excédents,
-    articles SAP hors catalogue) et le **top des articles les plus manquants en valeur** —
-    équivalents des feuilles « Rapprochement » et « Top ecarts ». Le personnel affecté à la mission
-    et les admins peuvent tout faire (sélection, import, comptage, clôture) et consulter le résultat
-    à tout moment ; tout est conservé dans la table `inventories` (photo, comptage et rapprochement
-    en JSON, comme `templates.sections`).
+    (écart quantité et valorisé par article, écart net valorisé, total des manquants/excédents, et
+    une colonne « Écart qté <magasin> » par magasin sélectionné) et le **top des articles les plus
+    manquants en valeur** — équivalents des feuilles « Rapprochement » et « Top ecarts ». Le
+    personnel affecté à la mission et les admins peuvent tout faire (import, sélection, comptage,
+    clôture) et consulter le résultat à tout moment ; tout est conservé dans la table `inventories`
+    (photo, comptage et rapprochement en JSON, comme `templates.sections`).
 - **Résultats** (`/submissions`) : score de maturité calculé sur les questions à échelle.
 - **Thème** : bouton clair/sombre dans la barre de navigation (persisté en `localStorage`,
   respecte la préférence système par défaut).
