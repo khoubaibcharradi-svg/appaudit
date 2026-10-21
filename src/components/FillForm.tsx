@@ -13,7 +13,7 @@ interface Props {
 
 export default function FillForm({ template, mission, sites }: Props) {
   const router = useRouter();
-  const [site, setSite] = useState(mission?.site ?? sites[0]?.name ?? "");
+  const [siteCode, setSiteCode] = useState(mission?.siteCode ?? sites[0]?.code ?? "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -36,7 +36,7 @@ export default function FillForm({ template, mission, sites }: Props) {
 
   async function handleSubmit() {
     setError(null);
-    if (!site.trim()) {
+    if (!siteCode.trim()) {
       setError("Veuillez indiquer le site audité.");
       return;
     }
@@ -49,7 +49,7 @@ export default function FillForm({ template, mission, sites }: Props) {
     try {
       const payload = {
         templateId: template.id,
-        site: site.trim(),
+        siteCode: siteCode.trim(),
         missionId: mission?.id,
         answers: Object.entries(answers)
           .filter(([id]) => visibleIds.has(id))
@@ -84,21 +84,21 @@ export default function FillForm({ template, mission, sites }: Props) {
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-black dark:text-zinc-50">Site audité</span>
             <select
-              value={site}
-              onChange={(e) => setSite(e.target.value)}
+              value={siteCode}
+              onChange={(e) => setSiteCode(e.target.value)}
               className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             >
               <optgroup label="Usines">
                 {sites.filter((s) => s.type === "USINE").map((s) => (
-                  <option key={s.name} value={s.name}>
+                  <option key={s.code} value={s.code}>
                     {s.name}
                   </option>
                 ))}
               </optgroup>
               <optgroup label="Dépôts">
                 {sites.filter((s) => s.type === "DEPOT").map((s) => (
-                  <option key={s.name} value={s.name}>
-                    {s.name}
+                  <option key={s.code} value={s.code}>
+                    {s.name} ({s.nature === "MOBILE" ? "mobile" : "fixe"})
                   </option>
                 ))}
               </optgroup>

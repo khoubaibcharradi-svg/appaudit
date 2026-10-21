@@ -29,7 +29,7 @@ function todayIso(): string {
 export default function MissionForm({ templates, users, sites }: Props) {
   const router = useRouter();
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
-  const [site, setSite] = useState(sites[0]?.name ?? "");
+  const [siteCode, setSiteCode] = useState(sites[0]?.code ?? "");
   const [scheduledDate, setScheduledDate] = useState(todayIso());
   const [assignedTo, setAssignedTo] = useState(users[0]?.codeUser ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
       const res = await fetch("/api/missions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, site, scheduledDate, assignedTo }),
+        body: JSON.stringify({ templateId, siteCode, scheduledDate, assignedTo }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la création de la mission.");
@@ -101,21 +101,21 @@ export default function MissionForm({ templates, users, sites }: Props) {
           <span className="font-medium text-black dark:text-zinc-50">Site à auditer</span>
           <select
             required
-            value={site}
-            onChange={(e) => setSite(e.target.value)}
+            value={siteCode}
+            onChange={(e) => setSiteCode(e.target.value)}
             className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           >
             <optgroup label="Usines">
               {sites.filter((s) => s.type === "USINE").map((s) => (
-                <option key={s.name} value={s.name}>
+                <option key={s.code} value={s.code}>
                   {s.name}
                 </option>
               ))}
             </optgroup>
             <optgroup label="Dépôts">
               {sites.filter((s) => s.type === "DEPOT").map((s) => (
-                <option key={s.name} value={s.name}>
-                  {s.name}
+                <option key={s.code} value={s.code}>
+                  {s.name} ({s.nature === "MOBILE" ? "mobile" : "fixe"})
                 </option>
               ))}
             </optgroup>
@@ -155,7 +155,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
 
       <button
         type="submit"
-        disabled={saving || !site.trim()}
+        disabled={saving || !siteCode.trim()}
         className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-brand px-5 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
       >
         {saving ? "Création…" : "Créer la mission"}

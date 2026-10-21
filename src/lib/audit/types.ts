@@ -65,6 +65,7 @@ export interface Submission {
   id: string;
   templateId: string;
   templateTitle: string;
+  siteCode: string;
   site: string;
   filledBy: string;
   filledByName: string;
@@ -75,11 +76,25 @@ export interface Submission {
 }
 
 export type SiteType = "USINE" | "DEPOT";
+export type DepotNature = "FIXE" | "MOBILE";
 
 export interface Site {
+  code: string;
   name: string;
   type: SiteType;
+  /** Only meaningful for DEPOT — a USINE is always fixed. */
+  nature?: DepotNature;
   region?: string;
+}
+
+/** PREFIX used to build/validate a site's code (code-USI-0001, DEPF-0001, DEPM-0001). */
+export function siteCodePrefix(type: SiteType, nature?: DepotNature): string {
+  if (type === "USINE") return "USI";
+  return nature === "MOBILE" ? "DEPM" : "DEPF";
+}
+
+export function isValidSiteCode(code: string, type: SiteType, nature?: DepotNature): boolean {
+  return new RegExp(`^${siteCodePrefix(type, nature)}-\\d{4}$`).test(code);
 }
 
 export type MissionStatus = "PLANIFIEE" | "TERMINEE";
@@ -88,6 +103,7 @@ export interface AuditMission {
   id: string;
   templateId: string;
   templateTitle: string;
+  siteCode: string;
   site: string;
   /** ISO date (YYYY-MM-DD) — when the audit is scheduled to take place. */
   scheduledDate: string;

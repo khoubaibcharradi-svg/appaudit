@@ -92,11 +92,12 @@ pour avoir tout de suite un exemple concret à l'écran.
 
   Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
-- **Sites** (usines et dépôts) : liste gérée dans la table `sites` (`src/lib/store/sites.ts`), pas
-  en texte libre — elle alimente les listes déroulantes de choix du site dans la création de
-  mission et dans le formulaire de remplissage libre. Les sites réels du département (Usine S2I,
-  Dépôts Jendouba/Sfax/Sousse) sont créés automatiquement au premier accès ; ajouter un site se
-  fait pour l'instant en complétant `SEED_SITES` dans `src/lib/store/sites.ts`.
+- **Sites** (`/admin/sites`) : usine ou dépôt — un dépôt a en plus une nature, fixe (entrepôt) ou
+  mobile (point de vente itinérant, ex. camion-tournée). Gérés dans la table `sites`, pas en texte
+  libre : l'interface admin permet d'en ajouter (nom, type, nature, région optionnelle, code) et ils
+  alimentent ensuite les listes déroulantes de choix du site dans la création de mission et dans le
+  formulaire de remplissage libre. Les sites réels du département (Usine S2I, Dépôts fixes
+  Jendouba/Sfax/Sousse) sont créés automatiquement au premier accès.
 - **Missions** (`/missions`, création sur `/admin/missions/new`) : un admin crée une mission en
   choisissant un formulaire (existant ou nouveau), un site (liste déroulante), une date et un
   membre du personnel affecté. Le personnel voit ses missions à réaliser sur son tableau de bord et
@@ -121,9 +122,11 @@ naturelle existe :
   la session (`session.sub`) et par tous les champs `created_by` / `assigned_to` / `filled_by` des
   autres tables — un admin ou un audit est donc rattaché à un matricule, pas à un identifiant opaque
   ni à l'email (qui reste unique, mais sert uniquement à la connexion).
-- **`sites`** : clé primaire = `name` (ex. `"Dépôt Jendouba"`). Référencée par `missions.site` et
-  `submissions.site` via des clés étrangères, ce qui empêche d'enregistrer un site qui n'existe pas
-  dans la liste.
+- **`sites`** : clé primaire = `code` (ex. `DEPF-0001` pour un dépôt fixe, `DEPM-0001` pour un
+  dépôt mobile, `USI-0001` pour une usine), saisi par l'admin à la création sur `/admin/sites` avec
+  la même logique de suggestion que les matricules. Référencé par `missions.site_code` et
+  `submissions.site_code` via des clés étrangères (`missions.site`/`submissions.site` restent le
+  nom lisible du site, dénormalisé pour l'affichage — comme `created_by_name` pour les utilisateurs).
 - **`templates`**, **`missions`**, **`submissions`** gardent un UUID technique : un titre de
   formulaire n'est pas garanti unique (deux admins peuvent créer le même), et une mission/un audit
   est un enregistrement d'événement horodaté, pas une entité métier stable.

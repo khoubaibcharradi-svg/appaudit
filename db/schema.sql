@@ -7,11 +7,12 @@
 --
 -- Les tables utilisent des clés métier (business keys) plutôt que des UUID
 -- techniques quand une clé naturelle stable existe : le matricule
--- (code_user, ex. ADM-0001) pour les utilisateurs, le nom pour les sites.
--- L'email reste unique (utilisé pour la connexion) mais n'est plus la clé
--- référencée par les autres tables. Les formulaires, missions et
--- soumissions restent identifiés par UUID (ce sont soit des titres non
--- garantis uniques, soit des enregistrements d'événements horodatés).
+-- (code_user, ex. ADM-0001) pour les utilisateurs, un code (code_site, ex.
+-- DEPF-0001) pour les sites. L'email et le nom du site restent uniques mais
+-- ne sont plus les clés référencées par les autres tables. Les formulaires,
+-- missions et soumissions restent identifiés par UUID (ce sont soit des
+-- titres non garantis uniques, soit des enregistrements d'événements
+-- horodatés).
 
 CREATE TABLE IF NOT EXISTS users (
   code_user VARCHAR(20) PRIMARY KEY,
@@ -28,8 +29,12 @@ CREATE TABLE IF NOT EXISTS users (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS sites (
-  name VARCHAR(255) PRIMARY KEY,
+  code VARCHAR(20) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
   type ENUM('USINE', 'DEPOT') NOT NULL,
+  -- Only meaningful for DEPOT (a USINE is always fixed): fixed warehouse
+  -- vs. a mobile/vehicle-based point of sale.
+  nature ENUM('FIXE', 'MOBILE') NULL,
   region VARCHAR(255) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -52,6 +57,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   id CHAR(36) PRIMARY KEY,
   template_id CHAR(36) NOT NULL,
   template_title VARCHAR(255) NOT NULL,
+  site_code VARCHAR(20) NOT NULL,
   site VARCHAR(255) NOT NULL,
   filled_by VARCHAR(20) NOT NULL,
   filled_by_name VARCHAR(255) NOT NULL,
@@ -61,14 +67,16 @@ CREATE TABLE IF NOT EXISTS submissions (
   submitted_at VARCHAR(32) NULL,
   INDEX idx_submissions_template (template_id),
   INDEX idx_submissions_filled_by (filled_by),
+  INDEX idx_submissions_site_code (site_code),
   CONSTRAINT fk_submissions_filled_by FOREIGN KEY (filled_by) REFERENCES users (code_user),
-  CONSTRAINT fk_submissions_site FOREIGN KEY (site) REFERENCES sites (name)
+  CONSTRAINT fk_submissions_site FOREIGN KEY (site_code) REFERENCES sites (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS missions (
   id CHAR(36) PRIMARY KEY,
   template_id CHAR(36) NOT NULL,
   template_title VARCHAR(255) NOT NULL,
+  site_code VARCHAR(20) NOT NULL,
   site VARCHAR(255) NOT NULL,
   scheduled_date VARCHAR(16) NOT NULL,
   assigned_to VARCHAR(20) NOT NULL,
@@ -79,7 +87,8 @@ CREATE TABLE IF NOT EXISTS missions (
   submission_id CHAR(36) NULL,
   created_at VARCHAR(32) NOT NULL,
   INDEX idx_missions_assigned_to (assigned_to),
+  INDEX idx_missions_site_code (site_code),
   CONSTRAINT fk_missions_assigned_to FOREIGN KEY (assigned_to) REFERENCES users (code_user),
   CONSTRAINT fk_missions_created_by FOREIGN KEY (created_by) REFERENCES users (code_user),
-  CONSTRAINT fk_missions_site FOREIGN KEY (site) REFERENCES sites (name)
+  CONSTRAINT fk_missions_site FOREIGN KEY (site_code) REFERENCES sites (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

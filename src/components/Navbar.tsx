@@ -35,6 +35,7 @@ export default function Navbar({ name, role }: Props) {
         { href: "/", label: "Tableau de bord" },
         { href: "/admin/templates", label: "Formulaires" },
         { href: "/missions", label: "Missions" },
+        { href: "/admin/sites", label: "Sites" },
         { href: "/admin/users", label: "Utilisateurs" },
         { href: "/submissions", label: "Résultats" },
       ]

@@ -8,6 +8,7 @@ interface SubmissionRow extends RowDataPacket {
   id: string;
   template_id: string;
   template_title: string;
+  site_code: string;
   site: string;
   filled_by: string;
   filled_by_name: string;
@@ -26,6 +27,7 @@ function mapSubmission(row: SubmissionRow): Submission {
     id: row.id,
     templateId: row.template_id,
     templateTitle: row.template_title,
+    siteCode: row.site_code,
     site: row.site,
     filledBy: row.filled_by,
     filledByName: row.filled_by_name,
@@ -69,6 +71,7 @@ export async function getSubmission(id: string): Promise<Submission | null> {
 export interface SubmissionInput {
   templateId: string;
   templateTitle: string;
+  siteCode: string;
   site: string;
   answers: AnswerEntry[];
 }
@@ -83,6 +86,7 @@ export async function createSubmission(
     id: randomUUID(),
     templateId: input.templateId,
     templateTitle: input.templateTitle,
+    siteCode: input.siteCode,
     site: input.site,
     filledBy: author.codeUser,
     filledByName: author.name,
@@ -93,12 +97,13 @@ export async function createSubmission(
   };
   await pool.query(
     `INSERT INTO submissions
-       (id, template_id, template_title, site, filled_by, filled_by_name, status, answers, created_at, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, template_id, template_title, site_code, site, filled_by, filled_by_name, status, answers, created_at, submitted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       submission.id,
       submission.templateId,
       submission.templateTitle,
+      submission.siteCode,
       submission.site,
       submission.filledBy,
       submission.filledByName,

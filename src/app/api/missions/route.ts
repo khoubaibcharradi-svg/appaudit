@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
 import { createMission } from "@/lib/store/missions";
-import { listSites } from "@/lib/store/sites";
+import { findSiteByCode } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
 import { findUserByCode } from "@/lib/store/users";
 
@@ -15,21 +15,19 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const templateId = typeof body?.templateId === "string" ? body.templateId : "";
-  const site = typeof body?.site === "string" ? body.site.trim() : "";
+  const siteCode = typeof body?.siteCode === "string" ? body.siteCode.trim() : "";
   const scheduledDate = typeof body?.scheduledDate === "string" ? body.scheduledDate : "";
   const assignedTo = typeof body?.assignedTo === "string" ? body.assignedTo : "";
 
-  if (!templateId || !site || !scheduledDate || !assignedTo) {
+  if (!templateId || !siteCode || !scheduledDate || !assignedTo) {
     return NextResponse.json({ error: "Formulaire, site, date et personnel affecté sont requis." }, { status: 400 });
   }
 
   const template = await getTemplate(templateId);
   if (!template) return NextResponse.json({ error: "Formulaire introuvable." }, { status: 404 });
 
-  const sites = await listSites();
-  if (!sites.some((s) => s.name === site)) {
-    return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
-  }
+  const site = await findSiteByCode(siteCode);
+  if (!site) return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
 
   const assignee = await findUserByCode(assignedTo);
   if (!assignee) return NextResponse.json({ error: "Utilisateur affecté introuvable." }, { status: 404 });
@@ -38,7 +36,8 @@ export async function POST(request: NextRequest) {
     {
       templateId,
       templateTitle: template.title,
-      site,
+      siteCode: site.code,
+      site: site.name,
       scheduledDate,
       assignedTo: assignee.codeUser,
       assignedToName: assignee.name,

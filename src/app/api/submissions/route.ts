@@ -4,7 +4,7 @@ import { isAdminRole } from "@/lib/auth/types";
 import { AnswerEntry } from "@/lib/audit/types";
 import { getVisibleQuestions } from "@/lib/audit/visibility";
 import { getMission, markMissionSubmitted } from "@/lib/store/missions";
-import { listSites } from "@/lib/store/sites";
+import { findSiteByCode } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
 import { createSubmission } from "@/lib/store/submissions";
 
@@ -14,20 +14,16 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const templateId = typeof body?.templateId === "string" ? body.templateId : "";
-  const site = typeof body?.site === "string" ? body.site.trim() : "";
+  const siteCode = typeof body?.siteCode === "string" ? body.siteCode.trim() : "";
   const missionId = typeof body?.missionId === "string" ? body.missionId : undefined;
   const rawAnswers: unknown[] = Array.isArray(body?.answers) ? body.answers : [];
 
   if (!templateId) return NextResponse.json({ error: "Formulaire manquant." }, { status: 400 });
-  if (!site) return NextResponse.json({ error: "Le site audité est requis." }, { status: 400 });
-
-  const sites = await listSites();
-  if (!sites.some((s) => s.name === site)) {
-    return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
-  }
 
   const template = await getTemplate(templateId);
   if (!template) return NextResponse.json({ error: "Formulaire introuvable." }, { status: 404 });
+
+  let site: { code: string; name: string };
 
   if (missionId) {
     const mission = await getMission(missionId);
@@ -38,6 +34,12 @@ export async function POST(request: NextRequest) {
     if (mission.status === "TERMINEE") {
       return NextResponse.json({ error: "Cette mission a déjà été réalisée." }, { status: 400 });
     }
+    site = { code: mission.siteCode, name: mission.site };
+  } else {
+    if (!siteCode) return NextResponse.json({ error: "Le site audité est requis." }, { status: 400 });
+    const found = await findSiteByCode(siteCode);
+    if (!found) return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
+    site = found;
   }
 
   const answers: AnswerEntry[] = rawAnswers
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
   }
 
   const submission = await createSubmission(
-    { templateId, templateTitle: template.title, site, answers },
+    { templateId, templateTitle: template.title, siteCode: site.code, site: site.name, answers },
     { codeUser: session.sub, name: session.name }
   );
 
