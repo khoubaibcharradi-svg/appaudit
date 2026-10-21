@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
+import { createInventory } from "@/lib/store/inventories";
 import { createMission } from "@/lib/store/missions";
 import { findSiteByCode } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
@@ -46,5 +47,10 @@ export async function POST(request: NextRequest) {
     },
     { codeUser: session.sub, name: session.name }
   );
+
+  if (isInventory) {
+    await createInventory(mission, { codeUser: session.sub, name: session.name });
+  }
+
   return NextResponse.json({ mission });
 }

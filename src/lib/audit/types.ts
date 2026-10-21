@@ -139,3 +139,75 @@ export interface Product {
   prixVente5?: number;
   prixVente6?: number;
 }
+
+/** A storage location (magasin) under a site: its own fixed warehouse, or one of its trucks. */
+export interface StorageLocation {
+  code: string;
+  siteCode: string;
+  name: string;
+  nature: DepotNature;
+  societe?: string;
+}
+
+/** One row of an imported SAP stock snapshot ("photo SAP"). */
+export interface SapPhotoRow {
+  societe?: string;
+  codeMagasin: string;
+  codeArticle: string;
+  designation: string;
+  qteSap: number;
+  cmup?: number;
+  horodatage?: string;
+}
+
+/** A blind physical count for one product at one storage location. */
+export interface PhysicalCount {
+  locationCode: string;
+  productCode: string;
+  quantity: number;
+}
+
+export interface RapprochementLine {
+  codeArticle: string;
+  designation: string;
+  cmup?: number;
+  qteSapTotale: number;
+  qtePhysiqueTotale: number;
+  ecartQte: number;
+  ecartValorise: number;
+}
+
+export interface RapprochementTotals {
+  ecartNetValorise: number;
+  totalManquants: number;
+  totalExcedents: number;
+  /** Articles present in the SAP photo but absent from the product catalog — should be 0. */
+  articlesSapHorsListe: number;
+}
+
+export interface Rapprochement {
+  lines: RapprochementLine[];
+  totals: RapprochementTotals;
+  /** Top 25 articles by largest (most negative) valorized gap. */
+  topEcarts: RapprochementLine[];
+}
+
+export type InventoryStatus = "EN_COURS" | "CLOTURE";
+
+export interface Inventory {
+  id: string;
+  missionId: string;
+  siteCode: string;
+  site: string;
+  status: InventoryStatus;
+  selectedLocations: string[];
+  sapPhoto: SapPhotoRow[];
+  counts: PhysicalCount[];
+  rapprochement?: Rapprochement;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  closedBy?: string;
+  closedByName?: string;
+  closedAt?: string;
+}

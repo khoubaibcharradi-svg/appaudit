@@ -120,3 +120,44 @@ CREATE TABLE IF NOT EXISTS products (
   prix_vente_6 DECIMAL(10,3) NULL,
   INDEX idx_products_famille (famille)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Storage locations (magasins) under a site: the site's own fixed warehouse
+-- plus its trucks (mobile sub-depots). `code` is the real SAP "code
+-- magasin" (free text, e.g. "50", "01-PFG", "C1"), matching the Excel
+-- Parametres sheet.
+CREATE TABLE IF NOT EXISTS storage_locations (
+  code VARCHAR(50) PRIMARY KEY,
+  site_code VARCHAR(20) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  nature ENUM('FIXE', 'MOBILE') NOT NULL,
+  societe VARCHAR(50) NULL,
+  INDEX idx_storage_locations_site (site_code),
+  CONSTRAINT fk_storage_locations_site FOREIGN KEY (site_code) REFERENCES sites (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One inventory session per mission with isInventory=true: blind physical
+-- count against an imported SAP stock snapshot ("photo SAP"), reconciled on
+-- closing. Photo rows, counts and the computed reconciliation are stored as
+-- JSON (same pattern as templates.sections / submissions.answers) rather
+-- than normalized tables, since they are only ever read/written as a whole
+-- per session, never queried in part.
+CREATE TABLE IF NOT EXISTS inventories (
+  id CHAR(36) PRIMARY KEY,
+  mission_id CHAR(36) NOT NULL UNIQUE,
+  site_code VARCHAR(20) NOT NULL,
+  site VARCHAR(255) NOT NULL,
+  status ENUM('EN_COURS', 'CLOTURE') NOT NULL DEFAULT 'EN_COURS',
+  selected_locations JSON NOT NULL,
+  sap_photo JSON NOT NULL,
+  counts JSON NOT NULL,
+  rapprochement JSON NULL,
+  created_by VARCHAR(20) NOT NULL,
+  created_by_name VARCHAR(255) NOT NULL,
+  created_at VARCHAR(32) NOT NULL,
+  closed_by VARCHAR(20) NULL,
+  closed_by_name VARCHAR(255) NULL,
+  closed_at VARCHAR(32) NULL,
+  CONSTRAINT fk_inventories_mission FOREIGN KEY (mission_id) REFERENCES missions (id),
+  CONSTRAINT fk_inventories_site FOREIGN KEY (site_code) REFERENCES sites (code),
+  CONSTRAINT fk_inventories_created_by FOREIGN KEY (created_by) REFERENCES users (code_user)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

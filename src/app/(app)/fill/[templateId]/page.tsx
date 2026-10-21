@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import FillForm from "@/components/FillForm";
 import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
+import { getInventoryByMissionId } from "@/lib/store/inventories";
 import { getMission } from "@/lib/store/missions";
-import { listProducts } from "@/lib/store/products";
 import { listSites } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
 
@@ -35,7 +35,10 @@ export default async function FillTemplatePage({
   // active (or an admin previewing it).
   if (!mission && !template.isActive && !isAdminRole(session.role)) notFound();
 
-  const [sites, products] = await Promise.all([listSites(), mission?.isInventory ? listProducts() : []]);
+  const [sites, inventory] = await Promise.all([
+    listSites(),
+    mission?.isInventory ? getInventoryByMissionId(mission.id) : null,
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,7 +49,7 @@ export default async function FillTemplatePage({
         <h1 className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">{template.title}</h1>
         {template.description && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{template.description}</p>}
       </div>
-      <FillForm template={template} mission={mission ?? undefined} sites={sites} products={products} />
+      <FillForm template={template} mission={mission ?? undefined} sites={sites} inventoryId={inventory?.id} />
     </div>
   );
 }

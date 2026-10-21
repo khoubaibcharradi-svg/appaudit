@@ -35,6 +35,7 @@ export default function Navbar({ name, role }: Props) {
         { href: "/", label: "Tableau de bord" },
         { href: "/admin/templates", label: "Formulaires" },
         { href: "/missions", label: "Missions" },
+        { href: "/inventaires", label: "Inventaires" },
         { href: "/admin/sites", label: "Sites" },
         { href: "/admin/products", label: "Produits" },
         { href: "/admin/users", label: "Utilisateurs" },
@@ -43,6 +44,7 @@ export default function Navbar({ name, role }: Props) {
     : [
         { href: "/", label: "Tableau de bord" },
         { href: "/missions", label: "Mes missions" },
+        { href: "/inventaires", label: "Mes inventaires" },
         { href: "/submissions", label: "Mes audits" },
       ];
 
