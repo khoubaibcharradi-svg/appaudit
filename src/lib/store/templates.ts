@@ -1,14 +1,66 @@
 import { randomUUID } from "crypto";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import {
   buildContainerStandardSections,
   buildDepotStandardSections,
   buildUsineStandardSections,
 } from "@/lib/audit/standardTemplate";
 import { AuditTemplate, SectionDef } from "@/lib/audit/types";
-import { readCollection, writeCollection } from "./jsonStore";
+import pool, { ensureSchema } from "@/lib/db/pool";
+import { logger } from "@/lib/logger";
 import { findAnySuperAdmin } from "./users";
 
-const COLLECTION = "templates";
+interface TemplateRow extends RowDataPacket {
+  id: string;
+  title: string;
+  description: string | null;
+  sections: SectionDef[] | string;
+  is_active: number;
+  created_by: string;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+  standard_key: string | null;
+}
+
+function parseSections(value: SectionDef[] | string): SectionDef[] {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
+
+function mapTemplate(row: TemplateRow): AuditTemplate {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? "",
+    sections: parseSections(row.sections),
+    isActive: Boolean(row.is_active),
+    createdBy: row.created_by,
+    createdByName: row.created_by_name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    standardKey: row.standard_key ?? undefined,
+  };
+}
+
+async function insertTemplate(template: AuditTemplate): Promise<void> {
+  await pool.query(
+    `INSERT INTO templates
+       (id, title, description, sections, is_active, created_by, created_by_name, created_at, updated_at, standard_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      template.id,
+      template.title,
+      template.description,
+      JSON.stringify(template.sections),
+      template.isActive ? 1 : 0,
+      template.createdBy,
+      template.createdByName,
+      template.createdAt,
+      template.updatedAt,
+      template.standardKey ?? null,
+    ]
+  );
+}
 
 interface StandardTemplateDef {
   key: string;
@@ -19,7 +71,7 @@ interface StandardTemplateDef {
 
 // Adding a new entry here makes it appear automatically for every
 // installation (new or existing) — each is only ever created once,
-// tracked by `standardKey`, so re-running never duplicates it.
+// tracked by `standard_key`, so re-running never duplicates it.
 const STANDARD_TEMPLATES: StandardTemplateDef[] = [
   {
     key: "usine",
@@ -44,43 +96,46 @@ const STANDARD_TEMPLATES: StandardTemplateDef[] = [
   },
 ];
 
-function buildStandardTemplate(def: StandardTemplateDef, creator: { id: string; name: string }): AuditTemplate {
-  const now = new Date().toISOString();
-  return {
-    id: randomUUID(),
-    title: def.title,
-    description: def.description,
-    sections: def.buildSections(),
-    isActive: false,
-    createdBy: creator.id,
-    createdByName: creator.name,
-    createdAt: now,
-    updatedAt: now,
-    standardKey: def.key,
-  };
-}
-
-async function ensureStandardTemplates(templates: AuditTemplate[]): Promise<AuditTemplate[]> {
-  const existingKeys = new Set(templates.map((t) => t.standardKey).filter(Boolean));
+async function ensureStandardTemplates(): Promise<void> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT DISTINCT standard_key FROM templates WHERE standard_key IS NOT NULL"
+  );
+  const existingKeys = new Set(rows.map((r) => r.standard_key as string));
   const missing = STANDARD_TEMPLATES.filter((def) => !existingKeys.has(def.key));
-  if (missing.length === 0) return templates;
+  if (missing.length === 0) return;
 
   const creator = await findAnySuperAdmin();
-  if (!creator) return templates;
+  if (!creator) return;
 
-  const added = missing.map((def) => buildStandardTemplate(def, creator));
-  const next = [...templates, ...added];
-  await writeCollection(COLLECTION, next);
-  return next;
+  for (const def of missing) {
+    const now = new Date().toISOString();
+    await insertTemplate({
+      id: randomUUID(),
+      title: def.title,
+      description: def.description,
+      sections: def.buildSections(),
+      isActive: false,
+      createdBy: creator.id,
+      createdByName: creator.name,
+      createdAt: now,
+      updatedAt: now,
+      standardKey: def.key,
+    });
+  }
+  logger.info("templates.standards_seeded", { added: missing.map((m) => m.key) });
 }
 
 export async function listTemplates(): Promise<AuditTemplate[]> {
-  const templates = await readCollection<AuditTemplate>(COLLECTION);
-  return ensureStandardTemplates(templates);
+  await ensureSchema();
+  await ensureStandardTemplates();
+  const [rows] = await pool.query<TemplateRow[]>("SELECT * FROM templates ORDER BY created_at ASC");
+  return rows.map(mapTemplate);
 }
 
 export async function getTemplate(id: string): Promise<AuditTemplate | null> {
-  return (await listTemplates()).find((t) => t.id === id) ?? null;
+  await ensureSchema();
+  const [rows] = await pool.query<TemplateRow[]>("SELECT * FROM templates WHERE id = ? LIMIT 1", [id]);
+  return rows[0] ? mapTemplate(rows[0]) : null;
 }
 
 export interface TemplateInput {
@@ -94,7 +149,7 @@ export async function createTemplate(
   input: TemplateInput,
   creator: { id: string; name: string }
 ): Promise<AuditTemplate> {
-  const templates = await listTemplates();
+  await ensureSchema();
   const now = new Date().toISOString();
   const template: AuditTemplate = {
     id: randomUUID(),
@@ -107,33 +162,42 @@ export async function createTemplate(
     createdAt: now,
     updatedAt: now,
   };
-  await writeCollection(COLLECTION, [...templates, template]);
+  await insertTemplate(template);
+  logger.info("templates.created", { id: template.id, title: template.title, by: creator.id });
   return template;
 }
 
 export async function updateTemplate(id: string, input: TemplateInput): Promise<AuditTemplate | null> {
-  const templates = await listTemplates();
-  const index = templates.findIndex((t) => t.id === id);
-  if (index === -1) return null;
+  await ensureSchema();
+  const existing = await getTemplate(id);
+  if (!existing) return null;
+
   const updated: AuditTemplate = {
-    ...templates[index],
+    ...existing,
     title: input.title,
     description: input.description,
     sections: input.sections,
     isActive: input.isActive,
     updatedAt: new Date().toISOString(),
   };
-  templates[index] = updated;
-  await writeCollection(COLLECTION, templates);
+  await pool.query("UPDATE templates SET title = ?, description = ?, sections = ?, is_active = ?, updated_at = ? WHERE id = ?", [
+    updated.title,
+    updated.description,
+    JSON.stringify(updated.sections),
+    updated.isActive ? 1 : 0,
+    updated.updatedAt,
+    id,
+  ]);
+  logger.info("templates.updated", { id, title: updated.title });
   return updated;
 }
 
 export async function deleteTemplate(id: string): Promise<boolean> {
-  const templates = await listTemplates();
-  const next = templates.filter((t) => t.id !== id);
-  if (next.length === templates.length) return false;
-  await writeCollection(COLLECTION, next);
-  return true;
+  await ensureSchema();
+  const [result] = await pool.query<ResultSetHeader>("DELETE FROM templates WHERE id = ?", [id]);
+  const deleted = result.affectedRows > 0;
+  if (deleted) logger.info("templates.deleted", { id });
+  return deleted;
 }
 
 export async function duplicateTemplate(
@@ -163,5 +227,10 @@ export async function duplicateTemplate(
     })),
   }));
 
-  return createTemplate({ title: `Copie de ${source.title}`, description: source.description, sections, isActive: false }, creator);
+  const duplicate = await createTemplate(
+    { title: `Copie de ${source.title}`, description: source.description, sections, isActive: false },
+    creator
+  );
+  logger.info("templates.duplicated", { sourceId: id, newId: duplicate.id });
+  return duplicate;
 }

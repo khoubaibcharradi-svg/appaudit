@@ -37,8 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-# local JSON data store (users, templates, submissions)
-/data
+# app log files and local DB backups (data is now in MySQL — see db/schema.sql)
+/logs
+/backups
 
 # typescript
 *.tsbuildinfo

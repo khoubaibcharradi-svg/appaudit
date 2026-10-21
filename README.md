@@ -6,6 +6,26 @@ résultats sont consultables avec un score de maturité par audit.
 
 ## Démarrage
 
+### Base de données
+
+Les données sont stockées dans MySQL (ou MariaDB), pas dans des fichiers JSON. Avant le premier
+démarrage :
+
+1. Créer la base (une seule fois, l'app ne crée pas la base elle-même — seulement ses tables) :
+   ```sql
+   CREATE DATABASE audit_app_dev;
+   ```
+2. Copier `.env.example` vers `.env.local` et renseigner `DB_HOST`, `DB_PORT` (3306 par défaut),
+   `DB_NAME`, `DB_USER`, `DB_PASSWORD` selon votre installation locale.
+3. Appliquer le schéma (crée les tables `users`, `templates`, `missions`, `submissions` si elles
+   n'existent pas) :
+   ```bash
+   npm run db:migrate
+   ```
+
+`npm run dev` et `npm run build` appliquent aussi le schéma automatiquement au premier accès à la
+base (`ensureSchema()`), donc l'étape 3 est surtout utile pour vérifier la connexion séparément.
+
 ```bash
 npm run dev
 ```
@@ -28,8 +48,7 @@ l'affichage de la page), deux choses sont nécessaires :
    poste client — chaque poste qui s'y connecte envoie cette même origine. Si l'IP réseau de la
    machine qui héberge le serveur change, mettez à jour cette valeur.
 
-Au premier démarrage, deux comptes sont créés automatiquement (stockés dans `data/users.json`,
-non versionné) :
+Au premier démarrage, deux comptes sont créés automatiquement dans la base :
 
 | Rôle       | Email                 | Mot de passe     |
 | ---------- | --------------------- | ---------------- |
@@ -81,11 +100,37 @@ ajoutés après le premier démarrage, sur une installation déjà en service.
 - **Thème** : bouton clair/sombre dans la barre de navigation (persisté en `localStorage`,
   respecte la préférence système par défaut).
 
-Les données (utilisateurs, formulaires, missions, soumissions) sont stockées dans des fichiers
-JSON sous `data/` (non versionné) via `src/lib/store`.
+Les données (utilisateurs, formulaires, missions, soumissions) sont stockées dans MySQL via
+`src/lib/store` (`mysql2`, pool de connexions dans `src/lib/db/pool.ts`, schéma dans
+`db/schema.sql`).
+
+## Journalisation (logs)
+
+Chaque action notable (connexion réussie/échouée, création/modification/suppression de
+formulaire, création de mission, soumission d'audit…) est journalisée dans
+`logs/app-AAAA-MM-JJ.log` (un fichier par jour, non versionné, une ligne JSON par événement) :
+
+```json
+{"time":"2026-10-21T08:33:41.902Z","level":"info","message":"submissions.created","id":"...","templateId":"...","site":"Dépôt Jendouba","by":"..."}
+```
+
+La journalisation n'interrompt jamais l'application (erreurs d'écriture ignorées silencieusement).
+Voir `src/lib/logger.ts`.
+
+## Sauvegarde
+
+```bash
+npm run backup
+```
+
+Écrit un fichier texte horodaté dans `backups/backup-<date>.txt` (non versionné) avec le contenu
+de toutes les tables (`users`, `templates`, `missions`, `submissions`) au format JSON lisible. Les
+mots de passe hachés sont remplacés par `[REDACTED]` — aucun secret n'est jamais écrit dans une
+sauvegarde. Voir `scripts/backup.mjs`.
 
 ## Stack
 
 Next.js (App Router) + TypeScript + Tailwind CSS. Authentification par session JWT (cookie
 httpOnly, `jose`) avec mots de passe hachés (`bcryptjs`). Les routes sont protégées par
-`src/proxy.ts` (rôle `ADMIN` ou `SUPERADMIN` requis sur `/admin/**`).
+`src/proxy.ts` (rôle `ADMIN` ou `SUPERADMIN` requis sur `/admin/**`). Stockage MySQL (`mysql2`),
+journalisation fichier et sauvegarde `.txt` (voir sections ci-dessus).

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/session";
+import { logger } from "@/lib/logger";
 import { findUserByEmail } from "@/lib/store/users";
 
 export async function POST(request: NextRequest) {
@@ -14,9 +15,11 @@ export async function POST(request: NextRequest) {
 
   const user = await findUserByEmail(email);
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    logger.warn("auth.login_failed", { email });
     return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
   }
 
   await setSessionCookie({ sub: user.id, role: user.role, name: user.name, email: user.email });
+  logger.info("auth.login_success", { userId: user.id, email: user.email, role: user.role });
   return NextResponse.json({ ok: true, role: user.role });
 }
