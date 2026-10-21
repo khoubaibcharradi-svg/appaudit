@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   filled_by_name VARCHAR(255) NOT NULL,
   status VARCHAR(32) NOT NULL,
   answers JSON NOT NULL,
+  inventory_counts JSON NULL,
   created_at VARCHAR(32) NOT NULL,
   submitted_at VARCHAR(32) NULL,
   INDEX idx_submissions_template (template_id),
@@ -71,6 +72,10 @@ CREATE TABLE IF NOT EXISTS submissions (
   CONSTRAINT fk_submissions_filled_by FOREIGN KEY (filled_by) REFERENCES users (code_user),
   CONSTRAINT fk_submissions_site FOREIGN KEY (site_code) REFERENCES sites (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Added after the initial release — applies on top of an already-created
+-- `submissions` table without requiring a drop.
+ALTER TABLE submissions ADD COLUMN IF NOT EXISTS inventory_counts JSON NULL;
 
 CREATE TABLE IF NOT EXISTS missions (
   id CHAR(36) PRIMARY KEY,
@@ -85,10 +90,33 @@ CREATE TABLE IF NOT EXISTS missions (
   created_by_name VARCHAR(255) NOT NULL,
   status VARCHAR(32) NOT NULL,
   submission_id CHAR(36) NULL,
+  is_inventory TINYINT(1) NOT NULL DEFAULT 0,
   created_at VARCHAR(32) NOT NULL,
   INDEX idx_missions_assigned_to (assigned_to),
   INDEX idx_missions_site_code (site_code),
   CONSTRAINT fk_missions_assigned_to FOREIGN KEY (assigned_to) REFERENCES users (code_user),
   CONSTRAINT fk_missions_created_by FOREIGN KEY (created_by) REFERENCES users (code_user),
   CONSTRAINT fk_missions_site FOREIGN KEY (site_code) REFERENCES sites (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Added after the initial release — applies on top of an already-created
+-- `missions` table without requiring a drop.
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS is_inventory TINYINT(1) NOT NULL DEFAULT 0;
+
+-- Product catalog backing the optional inventory task on a mission. `code`
+-- is the real SAP article code (free text, typed by the admin), not a
+-- generated sequential code like users/sites.
+CREATE TABLE IF NOT EXISTS products (
+  code VARCHAR(50) PRIMARY KEY,
+  designation VARCHAR(255) NOT NULL,
+  famille VARCHAR(255) NULL,
+  colisage INT NULL,
+  prix_achat DECIMAL(10,3) NULL,
+  prix_vente_1 DECIMAL(10,3) NULL,
+  prix_vente_2 DECIMAL(10,3) NULL,
+  prix_vente_3 DECIMAL(10,3) NULL,
+  prix_vente_4 DECIMAL(10,3) NULL,
+  prix_vente_5 DECIMAL(10,3) NULL,
+  prix_vente_6 DECIMAL(10,3) NULL,
+  INDEX idx_products_famille (famille)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   const siteCode = typeof body?.siteCode === "string" ? body.siteCode.trim() : "";
   const scheduledDate = typeof body?.scheduledDate === "string" ? body.scheduledDate : "";
   const assignedTo = typeof body?.assignedTo === "string" ? body.assignedTo : "";
+  const isInventory = Boolean(body?.isInventory);
 
   if (!templateId || !siteCode || !scheduledDate || !assignedTo) {
     return NextResponse.json({ error: "Formulaire, site, date et personnel affecté sont requis." }, { status: 400 });
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       scheduledDate,
       assignedTo: assignee.codeUser,
       assignedToName: assignee.name,
+      isInventory,
     },
     { codeUser: session.sub, name: session.name }
   );

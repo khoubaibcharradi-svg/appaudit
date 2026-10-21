@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
 import { QuestionDef, SCALE_OPTIONS, YES_NO_OPTIONS } from "@/lib/audit/types";
 import { computeMaturityScore } from "@/lib/audit/score";
+import { listProducts } from "@/lib/store/products";
 import { getSubmission } from "@/lib/store/submissions";
 import { getTemplate } from "@/lib/store/templates";
 
@@ -25,6 +26,21 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
   const template = await getTemplate(submission.templateId);
   const answerMap = Object.fromEntries(submission.answers.map((a) => [a.questionId, a.value]));
   const maturity = template ? computeMaturityScore(template.sections, submission.answers) : null;
+
+  const inventoryRows = submission.inventoryCounts?.length
+    ? await (async () => {
+        const products = await listProducts();
+        const byCode = new Map(products.map((p) => [p.code, p]));
+        return submission.inventoryCounts!.map((c) => ({
+          ...c,
+          product: byCode.get(c.productCode),
+        }));
+      })()
+    : [];
+  const inventoryTotal = inventoryRows.reduce(
+    (sum, r) => sum + r.quantity * (r.product?.prixAchat ?? 0),
+    0
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,6 +67,28 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
         <p className="text-sm text-amber-600 dark:text-amber-400">
           Le formulaire d&apos;origine a été modifié ou supprimé : les réponses brutes sont conservées ci-dessous.
         </p>
+      )}
+
+      {inventoryRows.length > 0 && (
+        <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Inventaire — comptage produits</h2>
+            <span className="text-xs text-zinc-500">
+              Valorisation (prix d&apos;achat) : {inventoryTotal.toFixed(3)} DT
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col divide-y divide-black/[.06] dark:divide-white/[.08]">
+            {inventoryRows.map((r) => (
+              <div key={r.productCode} className="flex items-center justify-between py-2 text-sm">
+                <span>
+                  {r.product?.designation ?? r.productCode}{" "}
+                  <span className="text-xs text-zinc-500">· {r.productCode}</span>
+                </span>
+                <span className="font-medium text-black dark:text-zinc-50">{r.quantity}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {template &&

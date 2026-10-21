@@ -2,21 +2,42 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AuditMission, AuditTemplate, QuestionDef, SCALE_OPTIONS, Site, YES_NO_OPTIONS } from "@/lib/audit/types";
+import {
+  AuditMission,
+  AuditTemplate,
+  Product,
+  QuestionDef,
+  SCALE_OPTIONS,
+  Site,
+  YES_NO_OPTIONS,
+} from "@/lib/audit/types";
 import { allQuestions, isQuestionVisible } from "@/lib/audit/visibility";
 
 interface Props {
   template: AuditTemplate;
   mission?: AuditMission;
   sites: Site[];
+  products: Product[];
 }
 
-export default function FillForm({ template, mission, sites }: Props) {
+export default function FillForm({ template, mission, sites, products }: Props) {
   const router = useRouter();
   const [siteCode, setSiteCode] = useState(mission?.siteCode ?? sites[0]?.code ?? "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [inventory, setInventory] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const isInventory = Boolean(mission?.isInventory);
+  const productsByFamille = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+    for (const p of products) {
+      const key = p.famille ?? "Sans famille";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(p);
+    }
+    return groups;
+  }, [products]);
 
   const visibleIds = useMemo(() => {
     const all = allQuestions(template.sections);
@@ -54,6 +75,11 @@ export default function FillForm({ template, mission, sites }: Props) {
         answers: Object.entries(answers)
           .filter(([id]) => visibleIds.has(id))
           .map(([questionId, value]) => ({ questionId, value })),
+        inventoryCounts: isInventory
+          ? Object.entries(inventory)
+              .filter(([, value]) => value !== "")
+              .map(([productCode, value]) => ({ productCode, quantity: Number(value) }))
+          : undefined,
       };
       const res = await fetch("/api/submissions", {
         method: "POST",
@@ -142,6 +168,50 @@ export default function FillForm({ template, mission, sites }: Props) {
           </div>
         );
       })}
+
+      {isInventory && (
+        <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
+          <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Inventaire — comptage produits</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Comptage à l&apos;aveugle : indiquez la quantité physique constatée pour chaque article.
+            Laissez vide les articles absents du site.
+          </p>
+          {products.length === 0 ? (
+            <p className="mt-4 text-sm text-zinc-500">
+              Aucun article dans le catalogue produits. Ajoutez-en depuis « Produits » dans le menu admin.
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col gap-4">
+              {Array.from(productsByFamille.entries()).map(([famille, items]) => (
+                <div key={famille}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{famille}</p>
+                  <div className="mt-2 flex flex-col divide-y divide-black/[.06] dark:divide-white/[.08]">
+                    {items.map((p) => (
+                      <div key={p.code} className="flex items-center justify-between gap-3 py-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-black dark:text-zinc-50">{p.designation}</p>
+                          <p className="text-xs text-zinc-500">
+                            {p.code}
+                            {p.colisage ? ` · colisage ${p.colisage}` : ""}
+                          </p>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={inventory[p.code] ?? ""}
+                          onChange={(e) => setInventory((prev) => ({ ...prev, [p.code]: e.target.value }))}
+                          placeholder="Qté"
+                          className="w-24 shrink-0 rounded-lg border border-black/[.12] bg-transparent px-3 py-1.5 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 

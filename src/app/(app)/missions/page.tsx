@@ -46,6 +46,11 @@ export default async function MissionsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                {m.isInventory && (
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                    Inventaire
+                  </span>
+                )}
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                     m.status === "TERMINEE"

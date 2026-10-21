@@ -32,6 +32,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
   const [siteCode, setSiteCode] = useState(sites[0]?.code ?? "");
   const [scheduledDate, setScheduledDate] = useState(todayIso());
   const [assignedTo, setAssignedTo] = useState(users[0]?.codeUser ?? "");
+  const [isInventory, setIsInventory] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -43,7 +44,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
       const res = await fetch("/api/missions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, siteCode, scheduledDate, assignedTo }),
+        body: JSON.stringify({ templateId, siteCode, scheduledDate, assignedTo, isInventory }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la création de la mission.");
@@ -149,6 +150,16 @@ export default function MissionForm({ templates, users, sites }: Props) {
             </select>
           </label>
         </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isInventory}
+            onChange={(e) => setIsInventory(e.target.checked)}
+            className="h-4 w-4 rounded border-black/[.2] accent-brand dark:border-white/[.3]"
+          />
+          <span className="font-medium text-black dark:text-zinc-50">Faire un inventaire (comptage produits)</span>
+        </label>
       </div>
 
       {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}

@@ -98,17 +98,27 @@ pour avoir tout de suite un exemple concret à l'écran.
   alimentent ensuite les listes déroulantes de choix du site dans la création de mission et dans le
   formulaire de remplissage libre. Les sites réels du département (Usine S2I, Dépôts fixes
   Jendouba/Sfax/Sousse) sont créés automatiquement au premier accès.
+- **Produits** (`/admin/products`) : catalogue utilisé par la tâche d'inventaire — code article
+  (le code réel, ex. SAP, saisi librement : pas de format imposé contrairement aux matricules et
+  codes site), désignation, famille, colisage et jusqu'à 6 prix de vente en plus du prix d'achat.
+  Affiché groupé par famille.
 - **Missions** (`/missions`, création sur `/admin/missions/new`) : un admin crée une mission en
   choisissant un formulaire (existant ou nouveau), un site (liste déroulante), une date et un
   membre du personnel affecté. Le personnel voit ses missions à réaliser sur son tableau de bord et
   dans « Mes missions » ; le site est alors fixé par la mission. Une fois soumise, la mission passe
   à « Terminée » et pointe vers le résultat.
-- **Résultats** (`/submissions`) : score de maturité calculé sur les questions à échelle.
+  - **Tâche d'inventaire** : case à cocher « Faire un inventaire » à la création. Si cochée, le
+    personnel voit en plus, dans le formulaire de remplissage, un comptage à l'aveugle (une
+    quantité par produit du catalogue, regroupés par famille) ; le résultat affiche la liste
+    comptée et sa valorisation au prix d'achat. Pas de rapprochement avec un stock système (pas
+    d'intégration SAP) : c'est un relevé de quantités physiques, pas un écart calculé.
+- **Résultats** (`/submissions`) : score de maturité calculé sur les questions à échelle, et le
+  détail du comptage d'inventaire si la mission en comportait un.
 - **Thème** : bouton clair/sombre dans la barre de navigation (persisté en `localStorage`,
   respecte la préférence système par défaut).
 
-Les données (utilisateurs, sites, formulaires, missions, soumissions) sont stockées dans MySQL via
-`src/lib/store` (`mysql2`, pool de connexions dans `src/lib/db/pool.ts`, schéma dans
+Les données (utilisateurs, sites, produits, formulaires, missions, soumissions) sont stockées dans
+MySQL via `src/lib/store` (`mysql2`, pool de connexions dans `src/lib/db/pool.ts`, schéma dans
 `db/schema.sql`).
 
 ### Clés métier (business keys)

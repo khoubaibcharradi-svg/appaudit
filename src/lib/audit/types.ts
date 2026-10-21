@@ -61,6 +61,11 @@ export interface AnswerEntry {
 
 export type SubmissionStatus = "DRAFT" | "SUBMITTED";
 
+export interface InventoryCount {
+  productCode: string;
+  quantity: number;
+}
+
 export interface Submission {
   id: string;
   templateId: string;
@@ -71,6 +76,7 @@ export interface Submission {
   filledByName: string;
   status: SubmissionStatus;
   answers: AnswerEntry[];
+  inventoryCounts?: InventoryCount[];
   createdAt: string;
   submittedAt?: string;
 }
@@ -113,5 +119,23 @@ export interface AuditMission {
   createdByName: string;
   status: MissionStatus;
   submissionId?: string;
+  /** When true, the personnel filling this mission must also record an inventory count. */
+  isInventory: boolean;
   createdAt: string;
+}
+
+/** The product catalog backing the inventory task — code is the real SAP article code. */
+export interface Product {
+  code: string;
+  designation: string;
+  famille?: string;
+  /** Units per case/pack. */
+  colisage?: number;
+  prixAchat?: number;
+  prixVente1?: number;
+  prixVente2?: number;
+  prixVente3?: number;
+  prixVente4?: number;
+  prixVente5?: number;
+  prixVente6?: number;
 }

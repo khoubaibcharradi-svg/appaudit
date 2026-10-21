@@ -20,6 +20,7 @@ interface MissionRow extends RowDataPacket {
   created_by_name: string;
   status: AuditMission["status"];
   submission_id: string | null;
+  is_inventory: number;
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ function mapMission(row: MissionRow): AuditMission {
     createdByName: row.created_by_name,
     status: row.status,
     submissionId: row.submission_id ?? undefined,
+    isInventory: Boolean(row.is_inventory),
     createdAt: row.created_at,
   };
 }
@@ -49,6 +51,7 @@ export interface MissionInput {
   scheduledDate: string;
   assignedTo: string;
   assignedToName: string;
+  isInventory: boolean;
 }
 
 async function insertMission(input: MissionInput, creator: { codeUser: string; name: string }): Promise<AuditMission> {
@@ -62,8 +65,8 @@ async function insertMission(input: MissionInput, creator: { codeUser: string; n
   };
   await pool.query(
     `INSERT INTO missions
-       (id, template_id, template_title, site_code, site, scheduled_date, assigned_to, assigned_to_name, created_by, created_by_name, status, submission_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, template_id, template_title, site_code, site, scheduled_date, assigned_to, assigned_to_name, created_by, created_by_name, status, submission_id, is_inventory, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       mission.id,
       mission.templateId,
@@ -77,6 +80,7 @@ async function insertMission(input: MissionInput, creator: { codeUser: string; n
       mission.createdByName,
       mission.status,
       null,
+      mission.isInventory ? 1 : 0,
       mission.createdAt,
     ]
   );

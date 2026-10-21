@@ -8,7 +8,7 @@ import { dbConfig, loadEnv } from "./lib/env.mjs";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 loadEnv(root);
 
-const TABLES = ["users", "sites", "templates", "submissions", "missions"];
+const TABLES = ["users", "sites", "products", "templates", "submissions", "missions"];
 
 function redact(row) {
   if (!("password_hash" in row)) return row;
