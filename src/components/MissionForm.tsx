@@ -11,7 +11,7 @@ interface TemplateOption {
 }
 
 interface UserOption {
-  email: string;
+  codeUser: string;
   name: string;
   role: string;
 }
@@ -31,7 +31,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [site, setSite] = useState(sites[0]?.name ?? "");
   const [scheduledDate, setScheduledDate] = useState(todayIso());
-  const [assignedTo, setAssignedTo] = useState(users[0]?.email ?? "");
+  const [assignedTo, setAssignedTo] = useState(users[0]?.codeUser ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -142,7 +142,7 @@ export default function MissionForm({ templates, users, sites }: Props) {
               className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             >
               {users.map((u) => (
-                <option key={u.email} value={u.email}>
+                <option key={u.codeUser} value={u.codeUser}>
                   {u.name} ({u.role === "PERSONNEL" ? "Personnel" : u.role === "ADMIN" ? "Admin" : "Superadmin"})
                 </option>
               ))}

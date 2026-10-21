@@ -4,7 +4,7 @@ import { isAdminRole } from "@/lib/auth/types";
 import { createMission } from "@/lib/store/missions";
 import { listSites } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
-import { findUserByEmail } from "@/lib/store/users";
+import { findUserByCode } from "@/lib/store/users";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
   }
 
-  const assignee = await findUserByEmail(assignedTo);
+  const assignee = await findUserByCode(assignedTo);
   if (!assignee) return NextResponse.json({ error: "Utilisateur affecté introuvable." }, { status: 404 });
 
   const mission = await createMission(
@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
       templateTitle: template.title,
       site,
       scheduledDate,
-      assignedTo: assignee.email,
+      assignedTo: assignee.codeUser,
       assignedToName: assignee.name,
     },
-    { email: session.sub, name: session.name }
+    { codeUser: session.sub, name: session.name }
   );
   return NextResponse.json({ mission });
 }

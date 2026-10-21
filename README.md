@@ -50,10 +50,10 @@ l'affichage de la page), deux choses sont nécessaires :
 
 Au premier démarrage, deux comptes sont créés automatiquement dans la base :
 
-| Rôle       | Email                 | Mot de passe     |
-| ---------- | --------------------- | ---------------- |
-| Superadmin | `admin@s2i.local`     | `Admin123!`      |
-| Personnel  | `auditeur@s2i.local`  | `Personnel123!`  |
+| Rôle       | Matricule  | Email                 | Mot de passe     |
+| ---------- | ---------- | --------------------- | ---------------- |
+| Superadmin | `SUP-0001` | `admin@s2i.local`     | `Admin123!`      |
+| Personnel  | `PER-0001` | `auditeur@s2i.local`  | `Personnel123!`  |
 
 Ces identifiants sont personnalisables via les variables d'environnement `SEED_ADMIN_EMAIL`,
 `SEED_ADMIN_PASSWORD`, `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD` (voir `.env.example`).
@@ -115,9 +115,12 @@ Les données (utilisateurs, sites, formulaires, missions, soumissions) sont stoc
 Le schéma privilégie des clés métier stables plutôt que des UUID techniques quand une clé
 naturelle existe :
 
-- **`users`** : clé primaire = `email` (pas d'UUID `id`). C'est aussi la valeur portée par la
-  session (`session.sub`) et par tous les champs `created_by` / `assigned_to` / `filled_by` des
-  autres tables — un admin ou un audit est donc rattaché à un email, pas à un identifiant opaque.
+- **`users`** : clé primaire = `code_user`, le matricule (ex. `ADM-0001`, `PER-0002`), saisi par
+  l'admin à la création du compte — un `SUP-0000`/`ADM-0000`/`PER-0000` selon le rôle, l'app propose
+  un numéro libre suivant par défaut mais il reste modifiable. C'est cette valeur qui est portée par
+  la session (`session.sub`) et par tous les champs `created_by` / `assigned_to` / `filled_by` des
+  autres tables — un admin ou un audit est donc rattaché à un matricule, pas à un identifiant opaque
+  ni à l'email (qui reste unique, mais sert uniquement à la connexion).
 - **`sites`** : clé primaire = `name` (ex. `"Dépôt Jendouba"`). Référencée par `missions.site` et
   `submissions.site` via des clés étrangères, ce qui empêche d'enregistrer un site qui n'existe pas
   dans la liste.

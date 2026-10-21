@@ -2,7 +2,7 @@ import CreateUserForm from "@/components/CreateUserForm";
 import UserStatusToggle from "@/components/UserStatusToggle";
 import { getSession } from "@/lib/auth/session";
 import { Role } from "@/lib/auth/types";
-import { listUsers } from "@/lib/store/users";
+import { listUsers, suggestNextCode } from "@/lib/store/users";
 
 const ROLE_BADGE: Record<Role, string> = {
   SUPERADMIN: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
@@ -20,6 +20,16 @@ export default async function UsersPage() {
   const session = await getSession();
   const users = await listUsers();
   const canGrantAdmin = session?.role === "SUPERADMIN";
+  const [nextPersonnelCode, nextAdminCode, nextSuperadminCode] = await Promise.all([
+    suggestNextCode("PERSONNEL"),
+    suggestNextCode("ADMIN"),
+    suggestNextCode("SUPERADMIN"),
+  ]);
+  const nextCodeByRole: Record<Role, string> = {
+    PERSONNEL: nextPersonnelCode,
+    ADMIN: nextAdminCode,
+    SUPERADMIN: nextSuperadminCode,
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,7 +46,7 @@ export default async function UsersPage() {
             : "Vous pouvez créer des comptes personnel. Seul un superadmin peut créer des comptes admin."}
         </p>
         <div className="mt-4">
-          <CreateUserForm canGrantAdmin={canGrantAdmin} />
+          <CreateUserForm canGrantAdmin={canGrantAdmin} nextCodeByRole={nextCodeByRole} />
         </div>
       </div>
 
@@ -48,7 +58,9 @@ export default async function UsersPage() {
             return (
               <div key={u.email} className="flex items-center justify-between gap-3 p-4">
                 <div>
-                  <p className="text-sm font-medium text-black dark:text-zinc-50">{u.name}</p>
+                  <p className="text-sm font-medium text-black dark:text-zinc-50">
+                    {u.name} <span className="font-normal text-zinc-500">· {u.codeUser}</span>
+                  </p>
                   <p className="text-xs text-zinc-500">{u.email}</p>
                 </div>
                 <div className="flex items-center gap-2">

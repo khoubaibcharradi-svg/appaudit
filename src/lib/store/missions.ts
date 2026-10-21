@@ -48,11 +48,11 @@ export interface MissionInput {
   assignedToName: string;
 }
 
-async function insertMission(input: MissionInput, creator: { email: string; name: string }): Promise<AuditMission> {
+async function insertMission(input: MissionInput, creator: { codeUser: string; name: string }): Promise<AuditMission> {
   const mission: AuditMission = {
     id: randomUUID(),
     ...input,
-    createdBy: creator.email,
+    createdBy: creator.codeUser,
     createdByName: creator.name,
     status: "PLANIFIEE",
     createdAt: new Date().toISOString(),
@@ -80,7 +80,7 @@ async function insertMission(input: MissionInput, creator: { email: string; name
     id: mission.id,
     templateId: mission.templateId,
     assignedTo: mission.assignedTo,
-    by: creator.email,
+    by: creator.codeUser,
   });
   return mission;
 }
@@ -117,9 +117,9 @@ async function seedDemoMissions(): Promise<void> {
       usineTemplate.title,
       "Usine S2I",
       new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-      personnel.email,
+      personnel.codeUser,
       personnel.name,
-      admin.email,
+      admin.codeUser,
       admin.name,
       now,
     ]
@@ -135,9 +135,9 @@ async function seedDemoMissions(): Promise<void> {
       depotTemplate.title,
       "Dépôt Jendouba",
       new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10),
-      personnel.email,
+      personnel.codeUser,
       personnel.name,
-      admin.email,
+      admin.codeUser,
       admin.name,
       DEMO_SUBMISSION_ID,
       now,
@@ -155,7 +155,7 @@ async function seedDemoMissions(): Promise<void> {
       depotTemplate.id,
       depotTemplate.title,
       "Dépôt Jendouba",
-      personnel.email,
+      personnel.codeUser,
       personnel.name,
       JSON.stringify(answers),
       now,
@@ -173,11 +173,11 @@ export async function listMissions(): Promise<AuditMission[]> {
   return rows.map(mapMission);
 }
 
-export async function listMissionsForUser(userEmail: string): Promise<AuditMission[]> {
+export async function listMissionsForUser(userCode: string): Promise<AuditMission[]> {
   await ensureSchema();
   const [rows] = await pool.query<MissionRow[]>(
     "SELECT * FROM missions WHERE assigned_to = ? ORDER BY scheduled_date ASC",
-    [userEmail]
+    [userCode]
   );
   return rows.map(mapMission);
 }
@@ -190,7 +190,7 @@ export async function getMission(id: string): Promise<AuditMission | null> {
 
 export async function createMission(
   input: MissionInput,
-  creator: { email: string; name: string }
+  creator: { codeUser: string; name: string }
 ): Promise<AuditMission> {
   await ensureSchema();
   return insertMission(input, creator);

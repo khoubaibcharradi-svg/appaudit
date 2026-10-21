@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   const submission = await createSubmission(
     { templateId, templateTitle: template.title, site, answers },
-    { email: session.sub, name: session.name }
+    { codeUser: session.sub, name: session.name }
   );
 
   if (missionId) {

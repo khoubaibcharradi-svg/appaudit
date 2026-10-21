@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const sections = sanitizeSections(body?.sections);
     const template = await createTemplate(
       { title, description, sections, isActive },
-      { email: session.sub, name: session.name }
+      { codeUser: session.sub, name: session.name }
     );
     return NextResponse.json({ template });
   } catch (err) {

@@ -42,11 +42,11 @@ export async function listSubmissions(): Promise<Submission[]> {
   return rows.map(mapSubmission);
 }
 
-export async function listSubmissionsForUser(userEmail: string): Promise<Submission[]> {
+export async function listSubmissionsForUser(userCode: string): Promise<Submission[]> {
   await ensureSchema();
   const [rows] = await pool.query<SubmissionRow[]>(
     "SELECT * FROM submissions WHERE filled_by = ? ORDER BY created_at DESC",
-    [userEmail]
+    [userCode]
   );
   return rows.map(mapSubmission);
 }
@@ -75,7 +75,7 @@ export interface SubmissionInput {
 
 export async function createSubmission(
   input: SubmissionInput,
-  author: { email: string; name: string }
+  author: { codeUser: string; name: string }
 ): Promise<Submission> {
   await ensureSchema();
   const now = new Date().toISOString();
@@ -84,7 +84,7 @@ export async function createSubmission(
     templateId: input.templateId,
     templateTitle: input.templateTitle,
     site: input.site,
-    filledBy: author.email,
+    filledBy: author.codeUser,
     filledByName: author.name,
     status: "SUBMITTED",
     answers: input.answers,
@@ -112,7 +112,7 @@ export async function createSubmission(
     id: submission.id,
     templateId: submission.templateId,
     site: submission.site,
-    by: author.email,
+    by: author.codeUser,
   });
   return submission;
 }

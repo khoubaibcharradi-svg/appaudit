@@ -2,21 +2,33 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { Role } from "@/lib/auth/types";
+import { Role, ROLE_CODE_PREFIX } from "@/lib/auth/types";
 
 interface Props {
   /** Only a SUPERADMIN may grant ADMIN/SUPERADMIN rights; a plain ADMIN can only onboard PERSONNEL. */
   canGrantAdmin: boolean;
+  /** Next free matricule suggested per role (e.g. "PER-0003"), prefilled when the role changes. */
+  nextCodeByRole: Record<Role, string>;
 }
 
-export default function CreateUserForm({ canGrantAdmin }: Props) {
+export default function CreateUserForm({ canGrantAdmin, nextCodeByRole }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("PERSONNEL");
+  const [codeUser, setCodeUser] = useState(nextCodeByRole.PERSONNEL);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  function handleRoleChange(nextRole: Role) {
+    // Only replace the matricule if the admin hasn't typed a custom one —
+    // i.e. it still matches the suggestion for the role being left.
+    if (codeUser === nextCodeByRole[role]) {
+      setCodeUser(nextCodeByRole[nextRole]);
+    }
+    setRole(nextRole);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +38,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, codeUser }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de la création.");
@@ -34,6 +46,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
       setEmail("");
       setPassword("");
       setRole("PERSONNEL");
+      setCodeUser(nextCodeByRole.PERSONNEL);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la création.");
@@ -79,7 +92,7 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
           <span className="font-medium text-black dark:text-zinc-50">Rôle</span>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as Role)}
+            onChange={(e) => handleRoleChange(e.target.value as Role)}
             className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
           >
             <option value="PERSONNEL">Personnel (remplit les audits)</option>
@@ -90,6 +103,18 @@ export default function CreateUserForm({ canGrantAdmin }: Props) {
               </>
             )}
           </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium text-black dark:text-zinc-50">Matricule</span>
+          <input
+            required
+            pattern={`${ROLE_CODE_PREFIX[role]}-\\d{4}`}
+            title={`Format : ${ROLE_CODE_PREFIX[role]}-0000`}
+            value={codeUser}
+            onChange={(e) => setCodeUser(e.target.value.toUpperCase())}
+            className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
+          />
+          <span className="text-xs text-zinc-500">Format : {ROLE_CODE_PREFIX[role]}-0000</span>
         </label>
       </div>
 

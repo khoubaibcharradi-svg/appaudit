@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ce compte a été désactivé." }, { status: 403 });
   }
 
-  await setSessionCookie({ sub: user.email, role: user.role, name: user.name, email: user.email });
-  logger.info("auth.login_success", { email: user.email, role: user.role });
+  await setSessionCookie({ sub: user.codeUser, role: user.role, name: user.name, email: user.email });
+  logger.info("auth.login_success", { codeUser: user.codeUser, email: user.email, role: user.role });
   return NextResponse.json({ ok: true, role: user.role });
 }

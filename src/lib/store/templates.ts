@@ -116,7 +116,7 @@ async function ensureStandardTemplates(): Promise<void> {
         description: def.description,
         sections: def.buildSections(),
         isActive: false,
-        createdBy: creator.email,
+        createdBy: creator.codeUser,
         createdByName: creator.name,
         createdAt: now,
         updatedAt: now,
@@ -150,7 +150,7 @@ export interface TemplateInput {
 
 export async function createTemplate(
   input: TemplateInput,
-  creator: { email: string; name: string }
+  creator: { codeUser: string; name: string }
 ): Promise<AuditTemplate> {
   await ensureSchema();
   const now = new Date().toISOString();
@@ -160,13 +160,13 @@ export async function createTemplate(
     description: input.description,
     sections: input.sections,
     isActive: input.isActive,
-    createdBy: creator.email,
+    createdBy: creator.codeUser,
     createdByName: creator.name,
     createdAt: now,
     updatedAt: now,
   };
   await insertTemplate(template);
-  logger.info("templates.created", { id: template.id, title: template.title, by: creator.email });
+  logger.info("templates.created", { id: template.id, title: template.title, by: creator.codeUser });
   return template;
 }
 
@@ -205,7 +205,7 @@ export async function deleteTemplate(id: string): Promise<boolean> {
 
 export async function duplicateTemplate(
   id: string,
-  creator: { email: string; name: string }
+  creator: { codeUser: string; name: string }
 ): Promise<AuditTemplate | null> {
   const source = await getTemplate(id);
   if (!source) return null;

@@ -17,7 +17,7 @@ export default async function NewMissionPage() {
       </div>
       <MissionForm
         templates={templates.map((t) => ({ id: t.id, title: t.title }))}
-        users={users.map((u) => ({ email: u.email, name: u.name, role: u.role }))}
+        users={users.filter((u) => u.isActive).map((u) => ({ codeUser: u.codeUser, name: u.name, role: u.role }))}
         sites={sites}
       />
     </div>
