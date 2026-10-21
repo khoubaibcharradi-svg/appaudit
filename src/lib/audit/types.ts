@@ -1,55 +1,198 @@
-export type AnswerValue = "always" | "often" | "sometimes" | "rarely" | "never";
+export type QuestionType = "SCALE" | "YES_NO" | "TEXT" | "NUMBER";
 
-export const ANSWER_OPTIONS: { value: AnswerValue; label: string; score: number }[] = [
+export const SCALE_OPTIONS = [
   { value: "always", label: "Toujours", score: 1 },
   { value: "often", label: "Souvent", score: 0.75 },
   { value: "sometimes", label: "Parfois", score: 0.5 },
   { value: "rarely", label: "Rarement", score: 0.25 },
   { value: "never", label: "Jamais", score: 0 },
-];
+] as const;
 
-export type Depth = "rapide" | "standard" | "approfondi";
+export const YES_NO_OPTIONS = [
+  { value: "yes", label: "Oui" },
+  { value: "no", label: "Non" },
+] as const;
 
-export const DEPTH_QUESTIONS_PER_CATEGORY: Record<Depth, number> = {
-  rapide: 3,
-  standard: 5,
-  approfondi: 8,
-};
-
-export interface CategoryDef {
-  id: string;
-  label: string;
-  description: string;
+export function optionsForType(type: QuestionType): { value: string; label: string }[] | null {
+  if (type === "SCALE") return SCALE_OPTIONS.map(({ value, label }) => ({ value, label }));
+  if (type === "YES_NO") return YES_NO_OPTIONS.map(({ value, label }) => ({ value, label }));
+  return null;
 }
 
-export interface QuestionTemplate {
+export interface DependsOn {
+  questionId: string;
+  /** The question becomes visible once the parent's answer is one of these values. */
+  triggerValues: string[];
+}
+
+export interface QuestionDef {
   id: string;
-  categoryId: string;
   text: string;
+  type: QuestionType;
   weight: 1 | 2 | 3;
-  /** Only offered as a candidate when the answer to `dependsOn` matches `whenValueAtMost`. */
-  dependsOn?: {
-    questionId: string;
-    whenValueAtMost: AnswerValue;
-  };
+  required: boolean;
+  dependsOn?: DependsOn;
 }
 
-export interface GeneratedQuestion extends QuestionTemplate {
-  isFollowUp: boolean;
-}
-
-export type AnswersMap = Record<string, AnswerValue>;
-
-export interface CategoryResult {
-  categoryId: string;
+export interface SectionDef {
+  id: string;
   label: string;
-  scorePercent: number;
-  level: "critique" | "a_ameliorer" | "correct" | "excellent";
-  recommendation: string;
+  questions: QuestionDef[];
 }
 
-export interface AuditResult {
-  overallScorePercent: number;
-  categories: CategoryResult[];
-  answeredCount: number;
+export interface AuditTemplate {
+  id: string;
+  title: string;
+  description: string;
+  sections: SectionDef[];
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  /** Marks a seeded standard template so new ones can be added later without duplicating existing ones. */
+  standardKey?: string;
+}
+
+export interface AnswerEntry {
+  questionId: string;
+  value: string;
+}
+
+export type SubmissionStatus = "DRAFT" | "SUBMITTED";
+
+export interface Submission {
+  id: string;
+  templateId: string;
+  templateTitle: string;
+  siteCode: string;
+  site: string;
+  filledBy: string;
+  filledByName: string;
+  status: SubmissionStatus;
+  answers: AnswerEntry[];
+  createdAt: string;
+  submittedAt?: string;
+}
+
+export type SiteType = "USINE" | "DEPOT";
+export type DepotNature = "FIXE" | "MOBILE";
+
+export interface Site {
+  code: string;
+  name: string;
+  type: SiteType;
+  /** Only meaningful for DEPOT — a USINE is always fixed. */
+  nature?: DepotNature;
+  region?: string;
+}
+
+/** PREFIX used to build/validate a site's code (code-USI-0001, DEPF-0001, DEPM-0001). */
+export function siteCodePrefix(type: SiteType, nature?: DepotNature): string {
+  if (type === "USINE") return "USI";
+  return nature === "MOBILE" ? "DEPM" : "DEPF";
+}
+
+export function isValidSiteCode(code: string, type: SiteType, nature?: DepotNature): boolean {
+  return new RegExp(`^${siteCodePrefix(type, nature)}-\\d{4}$`).test(code);
+}
+
+export type MissionStatus = "PLANIFIEE" | "TERMINEE";
+
+export interface AuditMission {
+  id: string;
+  templateId: string;
+  templateTitle: string;
+  siteCode: string;
+  site: string;
+  /** ISO date (YYYY-MM-DD) — when the audit is scheduled to take place. */
+  scheduledDate: string;
+  assignedTo: string;
+  assignedToName: string;
+  createdBy: string;
+  createdByName: string;
+  status: MissionStatus;
+  submissionId?: string;
+  /** When true, the personnel filling this mission must also record an inventory count. */
+  isInventory: boolean;
+  createdAt: string;
+}
+
+/** The product catalog backing the inventory task — code is the real SAP article code. */
+export interface Product {
+  code: string;
+  designation: string;
+  famille?: string;
+  /** Units per case/pack. */
+  colisage?: number;
+  prixAchat?: number;
+  prixVente1?: number;
+  prixVente2?: number;
+  prixVente3?: number;
+  prixVente4?: number;
+  prixVente5?: number;
+  prixVente6?: number;
+}
+
+/** One row of an imported SAP stock snapshot ("photo SAP"). */
+export interface SapPhotoRow {
+  societe?: string;
+  codeMagasin: string;
+  codeArticle: string;
+  designation: string;
+  qteSap: number;
+  cmup?: number;
+  horodatage?: string;
+}
+
+/** A blind physical count for one product at one storage location. */
+export interface PhysicalCount {
+  locationCode: string;
+  productCode: string;
+  quantity: number;
+}
+
+export interface RapprochementLine {
+  codeArticle: string;
+  designation: string;
+  cmup?: number;
+  qteSapTotale: number;
+  qtePhysiqueTotale: number;
+  ecartQte: number;
+  ecartValorise: number;
+  /** Quantity gap (physique - SAP) per selected magasin, e.g. { "DEPOT SFAX": -12, "C10": -3 }. */
+  ecartParMagasin: Record<string, number>;
+}
+
+export interface RapprochementTotals {
+  ecartNetValorise: number;
+  totalManquants: number;
+  totalExcedents: number;
+}
+
+export interface Rapprochement {
+  lines: RapprochementLine[];
+  totals: RapprochementTotals;
+  /** Top 25 articles by largest (most negative) valorized gap. */
+  topEcarts: RapprochementLine[];
+}
+
+export type InventoryStatus = "EN_COURS" | "CLOTURE";
+
+export interface Inventory {
+  id: string;
+  missionId: string;
+  siteCode: string;
+  site: string;
+  status: InventoryStatus;
+  selectedLocations: string[];
+  sapPhoto: SapPhotoRow[];
+  counts: PhysicalCount[];
+  rapprochement?: Rapprochement;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  closedBy?: string;
+  closedByName?: string;
+  closedAt?: string;
 }

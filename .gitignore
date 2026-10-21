@@ -32,9 +32,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+
+# app log files and local DB backups (data is now in MySQL — see db/schema.sql)
+/logs
+/backups
 
 # typescript
 *.tsbuildinfo

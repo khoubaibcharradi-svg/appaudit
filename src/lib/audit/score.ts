@@ -1,63 +1,51 @@
-import { CATEGORIES } from "./bank";
-import { AnswersMap, ANSWER_OPTIONS, AnswerValue, AuditResult, CategoryResult, GeneratedQuestion } from "./types";
+import { SCALE_OPTIONS } from "./types";
+import { AnswerEntry, QuestionDef, SectionDef } from "./types";
+import { answersToMap, getVisibleQuestions } from "./visibility";
 
-const SCORE_BY_VALUE: Record<AnswerValue, number> = Object.fromEntries(
-  ANSWER_OPTIONS.map((o) => [o.value, o.score])
-) as Record<AnswerValue, number>;
+const SCORE_BY_VALUE: Record<string, number> = Object.fromEntries(
+  SCALE_OPTIONS.map((o) => [o.value, o.score])
+);
 
-function levelFor(scorePercent: number): CategoryResult["level"] {
-  if (scorePercent < 40) return "critique";
-  if (scorePercent < 65) return "a_ameliorer";
-  if (scorePercent < 85) return "correct";
-  return "excellent";
+export interface MaturityScore {
+  scorePercent: number;
+  scaleQuestionCount: number;
 }
 
-const RECOMMENDATIONS: Record<CategoryResult["level"], string> = {
-  critique: "Risque élevé : traitez ces points en priorité avant toute mise en production.",
-  a_ameliorer: "Des lacunes notables subsistent : planifiez des actions correctives à court terme.",
-  correct: "Le niveau est globalement satisfaisant, quelques ajustements restent utiles.",
-  excellent: "Bonnes pratiques bien en place : maintenez ce niveau lors des évolutions futures.",
-};
+export interface CompletionSummary {
+  visibleCount: number;
+  answeredCount: number;
+  requiredCount: number;
+  requiredAnsweredCount: number;
+}
 
-export function computeResult(questions: GeneratedQuestion[], answers: AnswersMap): AuditResult {
-  const byCategory = new Map<string, GeneratedQuestion[]>();
-  for (const q of questions) {
-    if (!byCategory.has(q.categoryId)) byCategory.set(q.categoryId, []);
-    byCategory.get(q.categoryId)!.push(q);
+/** Maturity score computed only from the SCALE-type questions that were shown and answered. */
+export function computeMaturityScore(sections: SectionDef[], answers: AnswerEntry[]): MaturityScore | null {
+  const answerMap = answersToMap(answers);
+  const visible = getVisibleQuestions(sections, answerMap);
+  const scaleQuestions = visible.filter((q): q is QuestionDef => q.type === "SCALE" && answerMap[q.id] !== undefined);
+  if (scaleQuestions.length === 0) return null;
+
+  let weightedSum = 0;
+  let weightSum = 0;
+  for (const q of scaleQuestions) {
+    const score = SCORE_BY_VALUE[answerMap[q.id]] ?? 0;
+    weightedSum += score * q.weight;
+    weightSum += q.weight;
   }
-
-  const categories: CategoryResult[] = [];
-  let totalWeighted = 0;
-  let totalWeight = 0;
-
-  for (const [categoryId, qs] of byCategory) {
-    const answered = qs.filter((q) => answers[q.id]);
-    if (answered.length === 0) continue;
-    let weightedSum = 0;
-    let weightSum = 0;
-    for (const q of answered) {
-      const score = SCORE_BY_VALUE[answers[q.id]];
-      weightedSum += score * q.weight;
-      weightSum += q.weight;
-    }
-    const scorePercent = Math.round((weightedSum / weightSum) * 100);
-    const level = levelFor(scorePercent);
-    categories.push({
-      categoryId,
-      label: CATEGORIES.find((c) => c.id === categoryId)?.label ?? categoryId,
-      scorePercent,
-      level,
-      recommendation: RECOMMENDATIONS[level],
-    });
-    totalWeighted += weightedSum;
-    totalWeight += weightSum;
-  }
-
-  categories.sort((a, b) => a.scorePercent - b.scorePercent);
-
   return {
-    overallScorePercent: totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 100) : 0,
-    categories,
-    answeredCount: Object.keys(answers).length,
+    scorePercent: Math.round((weightedSum / weightSum) * 100),
+    scaleQuestionCount: scaleQuestions.length,
+  };
+}
+
+export function computeCompletion(sections: SectionDef[], answers: AnswerEntry[]): CompletionSummary {
+  const answerMap = answersToMap(answers);
+  const visible = getVisibleQuestions(sections, answerMap);
+  const required = visible.filter((q) => q.required);
+  return {
+    visibleCount: visible.length,
+    answeredCount: visible.filter((q) => answerMap[q.id] !== undefined && answerMap[q.id] !== "").length,
+    requiredCount: required.length,
+    requiredAnsweredCount: required.filter((q) => answerMap[q.id] !== undefined && answerMap[q.id] !== "").length,
   };
 }
