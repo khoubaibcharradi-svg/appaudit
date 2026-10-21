@@ -29,12 +29,19 @@ async function insertSite(site: Site, ignoreDuplicates = false): Promise<void> {
 }
 
 // The real sites audited by the department. Adding a new entry here makes
-// it appear automatically on every installation (new or existing).
+// it appear automatically on every installation (new or existing). Each
+// depot is seeded as its main fixed warehouse; trucks (mobile sub-depots)
+// are added per site from /admin/sites.
 const SEED_SITES: Site[] = [
   { code: "USI-0001", name: "Usine S2I", type: "USINE" },
-  { code: "DEPF-0001", name: "Dépôt Jendouba", type: "DEPOT", nature: "FIXE", region: "Jendouba" },
-  { code: "DEPF-0002", name: "Dépôt Sfax", type: "DEPOT", nature: "FIXE", region: "Sfax" },
+  { code: "DEPF-0001", name: "Dépôt Radès", type: "DEPOT", nature: "FIXE", region: "Radès" },
+  { code: "DEPF-0002", name: "Dépôt Tazarka", type: "DEPOT", nature: "FIXE", region: "Tazarka" },
   { code: "DEPF-0003", name: "Dépôt Sousse", type: "DEPOT", nature: "FIXE", region: "Sousse" },
+  { code: "DEPF-0004", name: "Dépôt Sfax", type: "DEPOT", nature: "FIXE", region: "Sfax" },
+  { code: "DEPF-0005", name: "Dépôt Jendouba", type: "DEPOT", nature: "FIXE", region: "Jendouba" },
+  { code: "DEPF-0006", name: "Dépôt Kram", type: "DEPOT", nature: "FIXE", region: "Kram" },
+  { code: "DEPF-0007", name: "Dépôt Charguia", type: "DEPOT", nature: "FIXE", region: "Charguia" },
+  { code: "DEPF-0008", name: "Dépôt Charguia Proxim", type: "DEPOT", nature: "FIXE", region: "Charguia" },
 ];
 
 async function seedIfEmpty(): Promise<void> {

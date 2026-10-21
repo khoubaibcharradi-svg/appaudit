@@ -49,6 +49,52 @@ export async function findProductByCode(code: string): Promise<Product | null> {
   return rows[0] ? mapProduct(rows[0]) : null;
 }
 
+/** Bulk import: inserts new articles and updates existing ones (matched by code). */
+export async function importProducts(products: Product[]): Promise<{ imported: number }> {
+  await ensureSchema();
+  if (products.length === 0) return { imported: 0 };
+
+  const values: unknown[] = [];
+  const placeholders = products
+    .map((p) => {
+      values.push(
+        p.code,
+        p.designation,
+        p.famille ?? null,
+        p.colisage ?? null,
+        p.prixAchat ?? null,
+        p.prixVente1 ?? null,
+        p.prixVente2 ?? null,
+        p.prixVente3 ?? null,
+        p.prixVente4 ?? null,
+        p.prixVente5 ?? null,
+        p.prixVente6 ?? null
+      );
+      return "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    })
+    .join(", ");
+
+  await pool.query(
+    `INSERT INTO products
+       (code, designation, famille, colisage, prix_achat, prix_vente_1, prix_vente_2, prix_vente_3, prix_vente_4, prix_vente_5, prix_vente_6)
+     VALUES ${placeholders}
+     ON DUPLICATE KEY UPDATE
+       designation = VALUES(designation),
+       famille = VALUES(famille),
+       colisage = VALUES(colisage),
+       prix_achat = VALUES(prix_achat),
+       prix_vente_1 = VALUES(prix_vente_1),
+       prix_vente_2 = VALUES(prix_vente_2),
+       prix_vente_3 = VALUES(prix_vente_3),
+       prix_vente_4 = VALUES(prix_vente_4),
+       prix_vente_5 = VALUES(prix_vente_5),
+       prix_vente_6 = VALUES(prix_vente_6)`,
+    values
+  );
+  logger.info("products.imported", { count: products.length });
+  return { imported: products.length };
+}
+
 export async function createProduct(input: Product): Promise<Product> {
   await ensureSchema();
   const [existing] = await pool.query<ProductRow[]>("SELECT code FROM products WHERE code = ? LIMIT 1", [

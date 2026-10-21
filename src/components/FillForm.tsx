@@ -133,42 +133,6 @@ export default function FillForm({ template, mission, sites, products }: Props) 
         )}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-zinc-500">
-        <span>
-          {answeredRequired} / {visibleRequired.length} questions obligatoires répondues
-        </span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.1]">
-        <div
-          className="h-full rounded-full bg-brand transition-all"
-          style={{ width: `${visibleRequired.length ? (answeredRequired / visibleRequired.length) * 100 : 0}%` }}
-        />
-      </div>
-
-      {template.sections.map((section) => {
-        const visibleQuestions = section.questions.filter((q) => visibleIds.has(q.id));
-        if (visibleQuestions.length === 0) return null;
-        return (
-          <div
-            key={section.id}
-            className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950"
-          >
-            <h2 className="text-sm font-semibold text-black dark:text-zinc-50">{section.label}</h2>
-            <div className="mt-4 flex flex-col gap-4">
-              {visibleQuestions.map((q) => (
-                <QuestionField
-                  key={q.id}
-                  question={q}
-                  isFollowUp={Boolean(q.dependsOn)}
-                  value={answers[q.id]}
-                  onChange={(v) => setAnswer(q.id, v)}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
       {isInventory && (
         <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
           <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Inventaire — comptage produits</h2>
@@ -212,6 +176,42 @@ export default function FillForm({ template, mission, sites, products }: Props) 
           )}
         </div>
       )}
+
+      <div className="flex items-center justify-between text-xs text-zinc-500">
+        <span>
+          {answeredRequired} / {visibleRequired.length} questions obligatoires répondues
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/[.06] dark:bg-white/[.1]">
+        <div
+          className="h-full rounded-full bg-brand transition-all"
+          style={{ width: `${visibleRequired.length ? (answeredRequired / visibleRequired.length) * 100 : 0}%` }}
+        />
+      </div>
+
+      {template.sections.map((section) => {
+        const visibleQuestions = section.questions.filter((q) => visibleIds.has(q.id));
+        if (visibleQuestions.length === 0) return null;
+        return (
+          <div
+            key={section.id}
+            className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950"
+          >
+            <h2 className="text-sm font-semibold text-black dark:text-zinc-50">{section.label}</h2>
+            <div className="mt-4 flex flex-col gap-4">
+              {visibleQuestions.map((q) => (
+                <QuestionField
+                  key={q.id}
+                  question={q}
+                  isFollowUp={Boolean(q.dependsOn)}
+                  value={answers[q.id]}
+                  onChange={(v) => setAnswer(q.id, v)}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 

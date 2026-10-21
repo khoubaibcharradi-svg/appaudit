@@ -48,12 +48,12 @@ export default function Navbar({ name, role }: Props) {
 
   return (
     <header className="border-b border-black/[.08] bg-white dark:border-white/[.145] dark:bg-zinc-950">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-6">
           <Link href="/" className="shrink-0">
             <PromofoodLogo variant="full" size={26} />
           </Link>
-          <nav className="hidden items-center gap-4 text-sm text-zinc-600 sm:flex dark:text-zinc-400">
+          <nav className="hidden items-center gap-4 overflow-x-auto text-sm text-zinc-600 xl:flex dark:text-zinc-400">
             {links.map((link) => (
               <Link key={link.href} href={link.href} className="whitespace-nowrap hover:text-black dark:hover:text-zinc-50">
                 {link.label}
@@ -62,7 +62,7 @@ export default function Navbar({ name, role }: Props) {
           </nav>
         </div>
 
-        <div className="hidden items-center gap-3 text-sm sm:flex">
+        <div className="hidden items-center gap-3 text-sm xl:flex">
           <span className="whitespace-nowrap text-zinc-600 dark:text-zinc-400">
             {name} ·{" "}
             <span className="rounded-full bg-black/[.06] px-2 py-0.5 text-xs font-medium dark:bg-white/[.1]">
@@ -79,7 +79,7 @@ export default function Navbar({ name, role }: Props) {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:hidden">
+        <div className="flex items-center gap-2 xl:hidden">
           <ThemeToggle />
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -94,7 +94,7 @@ export default function Navbar({ name, role }: Props) {
       </div>
 
       {menuOpen && (
-        <div className="border-t border-black/[.08] px-4 py-3 sm:hidden dark:border-white/[.145]">
+        <div className="border-t border-black/[.08] px-4 py-3 xl:hidden dark:border-white/[.145]">
           <nav className="flex flex-col gap-1 text-sm">
             {links.map((link) => (
               <Link

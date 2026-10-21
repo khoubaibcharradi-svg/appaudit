@@ -1,4 +1,5 @@
 import CreateProductForm from "@/components/CreateProductForm";
+import ImportProductsForm from "@/components/ImportProductsForm";
 import { listProducts } from "@/lib/store/products";
 
 function formatPrice(value: number | undefined): string {
@@ -21,6 +22,13 @@ export default async function ProductsPage() {
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           Catalogue utilisé pour la tâche d&apos;inventaire des missions (comptage par produit).
         </p>
+      </div>
+
+      <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
+        <h2 className="text-sm font-semibold text-black dark:text-zinc-50">Importer des articles</h2>
+        <div className="mt-4">
+          <ImportProductsForm />
+        </div>
       </div>
 
       <div className="rounded-2xl border border-black/[.08] bg-white p-6 dark:border-white/[.145] dark:bg-zinc-950">
