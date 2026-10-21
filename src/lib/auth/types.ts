@@ -9,5 +9,6 @@ export interface User {
   email: string;
   passwordHash: string;
   role: Role;
+  isActive: boolean;
   createdAt: string;
 }

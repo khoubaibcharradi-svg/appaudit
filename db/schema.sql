@@ -16,8 +16,13 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('SUPERADMIN', 'ADMIN', 'PERSONNEL') NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at VARCHAR(32) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Added after the initial release — applies on top of an already-created
+-- `users` table (MySQL 8.0.29+ / MariaDB 10.0.2+) without requiring a drop.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS sites (
   name VARCHAR(255) PRIMARY KEY,

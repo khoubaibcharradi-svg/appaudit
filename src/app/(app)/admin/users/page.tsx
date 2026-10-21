@@ -1,4 +1,5 @@
 import CreateUserForm from "@/components/CreateUserForm";
+import UserStatusToggle from "@/components/UserStatusToggle";
 import { getSession } from "@/lib/auth/session";
 import { Role } from "@/lib/auth/types";
 import { listUsers } from "@/lib/store/users";
@@ -41,17 +42,33 @@ export default async function UsersPage() {
 
       <div className="rounded-2xl border border-black/[.08] bg-white dark:border-white/[.145] dark:bg-zinc-950">
         <div className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.08]">
-          {users.map((u) => (
-            <div key={u.email} className="flex items-center justify-between p-4">
-              <div>
-                <p className="text-sm font-medium text-black dark:text-zinc-50">{u.name}</p>
-                <p className="text-xs text-zinc-500">{u.email}</p>
+          {users.map((u) => {
+            const isSelf = u.email.toLowerCase() === session?.email.toLowerCase();
+            const canManage = !isSelf && (u.role === "PERSONNEL" || canGrantAdmin);
+            return (
+              <div key={u.email} className="flex items-center justify-between gap-3 p-4">
+                <div>
+                  <p className="text-sm font-medium text-black dark:text-zinc-50">{u.name}</p>
+                  <p className="text-xs text-zinc-500">{u.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGE[u.role]}`}>
+                    {ROLE_LABEL[u.role]}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      u.isActive
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
+                    }`}
+                  >
+                    {u.isActive ? "Actif" : "Désactivé"}
+                  </span>
+                  {canManage && <UserStatusToggle email={u.email} isActive={u.isActive} />}
+                </div>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_BADGE[u.role]}`}>
-                {ROLE_LABEL[u.role]}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

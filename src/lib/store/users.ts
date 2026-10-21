@@ -1,4 +1,4 @@
-import type { RowDataPacket } from "mysql2/promise";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { hashPassword } from "@/lib/auth/password";
 import type { User } from "@/lib/auth/types";
 import pool, { ensureSchema } from "@/lib/db/pool";
@@ -9,6 +9,7 @@ interface UserRow extends RowDataPacket {
   name: string;
   password_hash: string;
   role: User["role"];
+  is_active: number;
   created_at: string;
 }
 
@@ -18,14 +19,15 @@ function mapUser(row: UserRow): User {
     email: row.email,
     passwordHash: row.password_hash,
     role: row.role,
+    isActive: Boolean(row.is_active),
     createdAt: row.created_at,
   };
 }
 
 async function insertUser(user: User, ignoreDuplicates = false): Promise<void> {
   await pool.query(
-    `INSERT ${ignoreDuplicates ? "IGNORE " : ""}INTO users (email, name, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)`,
-    [user.email, user.name, user.passwordHash, user.role, user.createdAt]
+    `INSERT ${ignoreDuplicates ? "IGNORE " : ""}INTO users (email, name, password_hash, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    [user.email, user.name, user.passwordHash, user.role, user.isActive ? 1 : 0, user.createdAt]
   );
 }
 
@@ -45,6 +47,7 @@ async function seedIfEmpty(): Promise<void> {
       email: adminEmail,
       passwordHash: await hashPassword(adminPassword),
       role: "SUPERADMIN",
+      isActive: true,
       createdAt: now,
     },
     {
@@ -52,6 +55,7 @@ async function seedIfEmpty(): Promise<void> {
       email: staffEmail,
       passwordHash: await hashPassword(staffPassword),
       role: "PERSONNEL",
+      isActive: true,
       createdAt: now,
     },
   ];
@@ -104,9 +108,21 @@ export async function createUser(input: {
     email: input.email,
     passwordHash: await hashPassword(input.password),
     role: input.role,
+    isActive: true,
     createdAt: new Date().toISOString(),
   };
   await insertUser(user);
   logger.info("users.created", { email: user.email, role: user.role });
   return user;
+}
+
+export async function setUserActive(email: string, isActive: boolean): Promise<User | null> {
+  await ensureSchema();
+  const [result] = await pool.query<ResultSetHeader>("UPDATE users SET is_active = ? WHERE LOWER(email) = LOWER(?)", [
+    isActive ? 1 : 0,
+    email,
+  ]);
+  if (result.affectedRows === 0) return null;
+  logger.info(isActive ? "users.activated" : "users.deactivated", { email });
+  return findUserByEmail(email);
 }

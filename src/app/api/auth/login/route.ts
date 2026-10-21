@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
   }
 
+  if (!user.isActive) {
+    logger.warn("auth.login_blocked_inactive", { email });
+    return NextResponse.json({ error: "Ce compte a été désactivé." }, { status: 403 });
+  }
+
   await setSessionCookie({ sub: user.email, role: user.role, name: user.name, email: user.email });
   logger.info("auth.login_success", { email: user.email, role: user.role });
   return NextResponse.json({ ok: true, role: user.role });
