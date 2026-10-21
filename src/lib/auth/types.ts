@@ -5,7 +5,6 @@ export function isAdminRole(role: Role): boolean {
 }
 
 export interface User {
-  id: string;
   name: string;
   email: string;
   passwordHash: string;

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const user = await createUser({ name, email, password, role: requestedRole });
-    return NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    return NextResponse.json({ user: { name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur inconnue.";
     return NextResponse.json({ error: message }, { status: 400 });

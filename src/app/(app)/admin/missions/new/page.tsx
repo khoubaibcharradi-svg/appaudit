@@ -1,9 +1,10 @@
 import MissionForm from "@/components/MissionForm";
+import { listSites } from "@/lib/store/sites";
 import { listTemplates } from "@/lib/store/templates";
 import { listUsers } from "@/lib/store/users";
 
 export default async function NewMissionPage() {
-  const [templates, users] = await Promise.all([listTemplates(), listUsers()]);
+  const [templates, users, sites] = await Promise.all([listTemplates(), listUsers(), listSites()]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -16,7 +17,8 @@ export default async function NewMissionPage() {
       </div>
       <MissionForm
         templates={templates.map((t) => ({ id: t.id, title: t.title }))}
-        users={users.map((u) => ({ id: u.id, name: u.name, role: u.role }))}
+        users={users.map((u) => ({ email: u.email, name: u.name, role: u.role }))}
+        sites={sites}
       />
     </div>
   );

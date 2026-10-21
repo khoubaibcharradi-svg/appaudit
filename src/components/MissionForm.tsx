@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { KNOWN_SITES } from "@/lib/audit/types";
+import { Site } from "@/lib/audit/types";
 
 interface TemplateOption {
   id: string;
@@ -11,7 +11,7 @@ interface TemplateOption {
 }
 
 interface UserOption {
-  id: string;
+  email: string;
   name: string;
   role: string;
 }
@@ -19,18 +19,19 @@ interface UserOption {
 interface Props {
   templates: TemplateOption[];
   users: UserOption[];
+  sites: Site[];
 }
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function MissionForm({ templates, users }: Props) {
+export default function MissionForm({ templates, users, sites }: Props) {
   const router = useRouter();
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
-  const [site, setSite] = useState("");
+  const [site, setSite] = useState(sites[0]?.name ?? "");
   const [scheduledDate, setScheduledDate] = useState(todayIso());
-  const [assignedTo, setAssignedTo] = useState(users[0]?.id ?? "");
+  const [assignedTo, setAssignedTo] = useState(users[0]?.email ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -98,19 +99,27 @@ export default function MissionForm({ templates, users }: Props) {
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium text-black dark:text-zinc-50">Site à auditer</span>
-          <input
-            list="known-sites"
+          <select
             required
             value={site}
             onChange={(e) => setSite(e.target.value)}
-            placeholder="Ex : Dépôt Jendouba"
             className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
-          />
-          <datalist id="known-sites">
-            {KNOWN_SITES.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
+          >
+            <optgroup label="Usines">
+              {sites.filter((s) => s.type === "USINE").map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Dépôts">
+              {sites.filter((s) => s.type === "DEPOT").map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </optgroup>
+          </select>
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -133,7 +142,7 @@ export default function MissionForm({ templates, users }: Props) {
               className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
             >
               {users.map((u) => (
-                <option key={u.id} value={u.id}>
+                <option key={u.email} value={u.email}>
                   {u.name} ({u.role === "PERSONNEL" ? "Personnel" : u.role === "ADMIN" ? "Admin" : "Superadmin"})
                 </option>
               ))}

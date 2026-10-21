@@ -4,6 +4,7 @@ import { isAdminRole } from "@/lib/auth/types";
 import { AnswerEntry } from "@/lib/audit/types";
 import { getVisibleQuestions } from "@/lib/audit/visibility";
 import { getMission, markMissionSubmitted } from "@/lib/store/missions";
+import { listSites } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
 import { createSubmission } from "@/lib/store/submissions";
 
@@ -19,6 +20,11 @@ export async function POST(request: NextRequest) {
 
   if (!templateId) return NextResponse.json({ error: "Formulaire manquant." }, { status: 400 });
   if (!site) return NextResponse.json({ error: "Le site audité est requis." }, { status: 400 });
+
+  const sites = await listSites();
+  if (!sites.some((s) => s.name === site)) {
+    return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
+  }
 
   const template = await getTemplate(templateId);
   if (!template) return NextResponse.json({ error: "Formulaire introuvable." }, { status: 404 });
@@ -57,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   const submission = await createSubmission(
     { templateId, templateTitle: template.title, site, answers },
-    { id: session.sub, name: session.name }
+    { email: session.sub, name: session.name }
   );
 
   if (missionId) {

@@ -42,7 +42,7 @@ export default async function UsersPage() {
       <div className="rounded-2xl border border-black/[.08] bg-white dark:border-white/[.145] dark:bg-zinc-950">
         <div className="flex flex-col divide-y divide-black/[.06] dark:divide-white/[.08]">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between p-4">
+            <div key={u.email} className="flex items-center justify-between p-4">
               <div>
                 <p className="text-sm font-medium text-black dark:text-zinc-50">{u.name}</p>
                 <p className="text-xs text-zinc-500">{u.email}</p>

@@ -11,7 +11,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const duplicate = await duplicateTemplate(id, { id: session.sub, name: session.name });
+  const duplicate = await duplicateTemplate(id, { email: session.sub, name: session.name });
   if (!duplicate) return NextResponse.json({ error: "Formulaire introuvable." }, { status: 404 });
 
   return NextResponse.json({ template: duplicate });

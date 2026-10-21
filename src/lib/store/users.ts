@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import type { RowDataPacket } from "mysql2/promise";
 import { hashPassword } from "@/lib/auth/password";
 import type { User } from "@/lib/auth/types";
@@ -6,9 +5,8 @@ import pool, { ensureSchema } from "@/lib/db/pool";
 import { logger } from "@/lib/logger";
 
 interface UserRow extends RowDataPacket {
-  id: string;
-  name: string;
   email: string;
+  name: string;
   password_hash: string;
   role: User["role"];
   created_at: string;
@@ -16,7 +14,6 @@ interface UserRow extends RowDataPacket {
 
 function mapUser(row: UserRow): User {
   return {
-    id: row.id,
     name: row.name,
     email: row.email,
     passwordHash: row.password_hash,
@@ -25,15 +22,15 @@ function mapUser(row: UserRow): User {
   };
 }
 
-async function insertUser(user: User): Promise<void> {
+async function insertUser(user: User, ignoreDuplicates = false): Promise<void> {
   await pool.query(
-    "INSERT INTO users (id, name, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [user.id, user.name, user.email, user.passwordHash, user.role, user.createdAt]
+    `INSERT ${ignoreDuplicates ? "IGNORE " : ""}INTO users (email, name, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)`,
+    [user.email, user.name, user.passwordHash, user.role, user.createdAt]
   );
 }
 
 async function seedIfEmpty(): Promise<void> {
-  const [rows] = await pool.query<UserRow[]>("SELECT id FROM users LIMIT 1");
+  const [rows] = await pool.query<UserRow[]>("SELECT email FROM users LIMIT 1");
   if (rows.length > 0) return;
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@s2i.local";
@@ -44,7 +41,6 @@ async function seedIfEmpty(): Promise<void> {
 
   const seeded: User[] = [
     {
-      id: randomUUID(),
       name: "Administrateur Audit",
       email: adminEmail,
       passwordHash: await hashPassword(adminPassword),
@@ -52,7 +48,6 @@ async function seedIfEmpty(): Promise<void> {
       createdAt: now,
     },
     {
-      id: randomUUID(),
       name: "Auditeur Terrain",
       email: staffEmail,
       passwordHash: await hashPassword(staffPassword),
@@ -60,7 +55,7 @@ async function seedIfEmpty(): Promise<void> {
       createdAt: now,
     },
   ];
-  for (const user of seeded) await insertUser(user);
+  for (const user of seeded) await insertUser(user, true);
 
   logger.info("users.seeded", { admin: adminEmail, personnel: staffEmail });
   console.log(
@@ -82,12 +77,6 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   return rows[0] ? mapUser(rows[0]) : null;
 }
 
-export async function findUserById(id: string): Promise<User | null> {
-  await ensureSchema();
-  const [rows] = await pool.query<UserRow[]>("SELECT * FROM users WHERE id = ? LIMIT 1", [id]);
-  return rows[0] ? mapUser(rows[0]) : null;
-}
-
 /** Used to attribute system-seeded content (e.g. the standard templates) to a real account. */
 export async function findAnySuperAdmin(): Promise<User | null> {
   await ensureSchema();
@@ -103,7 +92,7 @@ export async function createUser(input: {
   role: User["role"];
 }): Promise<User> {
   await ensureSchema();
-  const [existing] = await pool.query<UserRow[]>("SELECT id FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1", [
+  const [existing] = await pool.query<UserRow[]>("SELECT email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1", [
     input.email,
   ]);
   if (existing.length > 0) {
@@ -111,7 +100,6 @@ export async function createUser(input: {
   }
 
   const user: User = {
-    id: randomUUID(),
     name: input.name,
     email: input.email,
     passwordHash: await hashPassword(input.password),
@@ -119,6 +107,6 @@ export async function createUser(input: {
     createdAt: new Date().toISOString(),
   };
   await insertUser(user);
-  logger.info("users.created", { id: user.id, email: user.email, role: user.role });
+  logger.info("users.created", { email: user.email, role: user.role });
   return user;
 }

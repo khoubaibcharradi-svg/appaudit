@@ -74,7 +74,13 @@ export interface Submission {
   submittedAt?: string;
 }
 
-export const KNOWN_SITES = ["Usine S2I", "Dépôt Jendouba", "Dépôt Sfax", "Dépôt Sousse"];
+export type SiteType = "USINE" | "DEPOT";
+
+export interface Site {
+  name: string;
+  type: SiteType;
+  region?: string;
+}
 
 export type MissionStatus = "PLANIFIEE" | "TERMINEE";
 

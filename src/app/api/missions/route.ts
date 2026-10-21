@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { isAdminRole } from "@/lib/auth/types";
 import { createMission } from "@/lib/store/missions";
+import { listSites } from "@/lib/store/sites";
 import { getTemplate } from "@/lib/store/templates";
-import { findUserById } from "@/lib/store/users";
+import { findUserByEmail } from "@/lib/store/users";
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -25,7 +26,12 @@ export async function POST(request: NextRequest) {
   const template = await getTemplate(templateId);
   if (!template) return NextResponse.json({ error: "Formulaire introuvable." }, { status: 404 });
 
-  const assignee = await findUserById(assignedTo);
+  const sites = await listSites();
+  if (!sites.some((s) => s.name === site)) {
+    return NextResponse.json({ error: "Site inconnu." }, { status: 400 });
+  }
+
+  const assignee = await findUserByEmail(assignedTo);
   if (!assignee) return NextResponse.json({ error: "Utilisateur affecté introuvable." }, { status: 404 });
 
   const mission = await createMission(
@@ -34,10 +40,10 @@ export async function POST(request: NextRequest) {
       templateTitle: template.title,
       site,
       scheduledDate,
-      assignedTo: assignee.id,
+      assignedTo: assignee.email,
       assignedToName: assignee.name,
     },
-    { id: session.sub, name: session.name }
+    { email: session.sub, name: session.name }
   );
   return NextResponse.json({ mission });
 }

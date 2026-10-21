@@ -2,17 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AuditMission, AuditTemplate, KNOWN_SITES, QuestionDef, SCALE_OPTIONS, YES_NO_OPTIONS } from "@/lib/audit/types";
+import { AuditMission, AuditTemplate, QuestionDef, SCALE_OPTIONS, Site, YES_NO_OPTIONS } from "@/lib/audit/types";
 import { allQuestions, isQuestionVisible } from "@/lib/audit/visibility";
 
 interface Props {
   template: AuditTemplate;
   mission?: AuditMission;
+  sites: Site[];
 }
 
-export default function FillForm({ template, mission }: Props) {
+export default function FillForm({ template, mission, sites }: Props) {
   const router = useRouter();
-  const [site, setSite] = useState(mission?.site ?? "");
+  const [site, setSite] = useState(mission?.site ?? sites[0]?.name ?? "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -82,18 +83,26 @@ export default function FillForm({ template, mission }: Props) {
         ) : (
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-black dark:text-zinc-50">Site audité</span>
-            <input
-              list="known-sites"
+            <select
               value={site}
               onChange={(e) => setSite(e.target.value)}
-              placeholder="Ex : Dépôt Jendouba"
               className="rounded-lg border border-black/[.12] bg-transparent px-3 py-2 text-sm outline-none focus:border-brand dark:border-white/[.2] dark:focus:border-brand"
-            />
-            <datalist id="known-sites">
-              {KNOWN_SITES.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
+            >
+              <optgroup label="Usines">
+                {sites.filter((s) => s.type === "USINE").map((s) => (
+                  <option key={s.name} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Dépôts">
+                {sites.filter((s) => s.type === "DEPOT").map((s) => (
+                  <option key={s.name} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
           </label>
         )}
       </div>

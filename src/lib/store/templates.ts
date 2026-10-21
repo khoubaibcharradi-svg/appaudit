@@ -42,9 +42,9 @@ function mapTemplate(row: TemplateRow): AuditTemplate {
   };
 }
 
-async function insertTemplate(template: AuditTemplate): Promise<void> {
+async function insertTemplate(template: AuditTemplate, ignoreDuplicates = false): Promise<void> {
   await pool.query(
-    `INSERT INTO templates
+    `INSERT ${ignoreDuplicates ? "IGNORE " : ""}INTO templates
        (id, title, description, sections, is_active, created_by, created_by_name, created_at, updated_at, standard_key)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -109,18 +109,21 @@ async function ensureStandardTemplates(): Promise<void> {
 
   for (const def of missing) {
     const now = new Date().toISOString();
-    await insertTemplate({
-      id: randomUUID(),
-      title: def.title,
-      description: def.description,
-      sections: def.buildSections(),
-      isActive: false,
-      createdBy: creator.id,
-      createdByName: creator.name,
-      createdAt: now,
-      updatedAt: now,
-      standardKey: def.key,
-    });
+    await insertTemplate(
+      {
+        id: randomUUID(),
+        title: def.title,
+        description: def.description,
+        sections: def.buildSections(),
+        isActive: false,
+        createdBy: creator.email,
+        createdByName: creator.name,
+        createdAt: now,
+        updatedAt: now,
+        standardKey: def.key,
+      },
+      true
+    );
   }
   logger.info("templates.standards_seeded", { added: missing.map((m) => m.key) });
 }
@@ -147,7 +150,7 @@ export interface TemplateInput {
 
 export async function createTemplate(
   input: TemplateInput,
-  creator: { id: string; name: string }
+  creator: { email: string; name: string }
 ): Promise<AuditTemplate> {
   await ensureSchema();
   const now = new Date().toISOString();
@@ -157,13 +160,13 @@ export async function createTemplate(
     description: input.description,
     sections: input.sections,
     isActive: input.isActive,
-    createdBy: creator.id,
+    createdBy: creator.email,
     createdByName: creator.name,
     createdAt: now,
     updatedAt: now,
   };
   await insertTemplate(template);
-  logger.info("templates.created", { id: template.id, title: template.title, by: creator.id });
+  logger.info("templates.created", { id: template.id, title: template.title, by: creator.email });
   return template;
 }
 
@@ -202,7 +205,7 @@ export async function deleteTemplate(id: string): Promise<boolean> {
 
 export async function duplicateTemplate(
   id: string,
-  creator: { id: string; name: string }
+  creator: { email: string; name: string }
 ): Promise<AuditTemplate | null> {
   const source = await getTemplate(id);
   if (!source) return null;

@@ -17,8 +17,8 @@ démarrage :
    ```
 2. Copier `.env.example` vers `.env.local` et renseigner `DB_HOST`, `DB_PORT` (3306 par défaut),
    `DB_NAME`, `DB_USER`, `DB_PASSWORD` selon votre installation locale.
-3. Appliquer le schéma (crée les tables `users`, `templates`, `missions`, `submissions` si elles
-   n'existent pas) :
+3. Appliquer le schéma (crée les tables `users`, `sites`, `templates`, `missions`, `submissions` si
+   elles n'existent pas) :
    ```bash
    npm run db:migrate
    ```
@@ -57,8 +57,9 @@ Au premier démarrage, deux comptes sont créés automatiquement dans la base :
 
 Ces identifiants sont personnalisables via les variables d'environnement `SEED_ADMIN_EMAIL`,
 `SEED_ADMIN_PASSWORD`, `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD` (voir `.env.example`).
-Les formulaires standards (voir plus bas) sont aussi créés automatiquement — y compris ceux
-ajoutés après le premier démarrage, sur une installation déjà en service.
+Les formulaires standards (voir plus bas), les sites et deux missions de démonstration (une
+planifiée, une terminée avec son audit soumis) sont aussi créés automatiquement au premier accès,
+pour avoir tout de suite un exemple concret à l'écran.
 
 ## Rôles
 
@@ -91,18 +92,38 @@ ajoutés après le premier démarrage, sur une installation déjà en service.
 
   Ils sont inactifs par défaut ; pour créer un nouveau formulaire, dupliquez-en un (bouton
   « Dupliquer » sur sa page) puis ajustez les sections/questions avant d'enregistrer.
+- **Sites** (usines et dépôts) : liste gérée dans la table `sites` (`src/lib/store/sites.ts`), pas
+  en texte libre — elle alimente les listes déroulantes de choix du site dans la création de
+  mission et dans le formulaire de remplissage libre. Les sites réels du département (Usine S2I,
+  Dépôts Jendouba/Sfax/Sousse) sont créés automatiquement au premier accès ; ajouter un site se
+  fait pour l'instant en complétant `SEED_SITES` dans `src/lib/store/sites.ts`.
 - **Missions** (`/missions`, création sur `/admin/missions/new`) : un admin crée une mission en
-  choisissant un formulaire (existant ou nouveau), un site, une date et un membre du personnel
-  affecté. Le personnel voit ses missions à réaliser sur son tableau de bord et dans « Mes
-  missions » ; le site est alors fixé par la mission. Une fois soumise, la mission passe à
-  « Terminée » et pointe vers le résultat.
+  choisissant un formulaire (existant ou nouveau), un site (liste déroulante), une date et un
+  membre du personnel affecté. Le personnel voit ses missions à réaliser sur son tableau de bord et
+  dans « Mes missions » ; le site est alors fixé par la mission. Une fois soumise, la mission passe
+  à « Terminée » et pointe vers le résultat.
 - **Résultats** (`/submissions`) : score de maturité calculé sur les questions à échelle.
 - **Thème** : bouton clair/sombre dans la barre de navigation (persisté en `localStorage`,
   respecte la préférence système par défaut).
 
-Les données (utilisateurs, formulaires, missions, soumissions) sont stockées dans MySQL via
+Les données (utilisateurs, sites, formulaires, missions, soumissions) sont stockées dans MySQL via
 `src/lib/store` (`mysql2`, pool de connexions dans `src/lib/db/pool.ts`, schéma dans
 `db/schema.sql`).
+
+### Clés métier (business keys)
+
+Le schéma privilégie des clés métier stables plutôt que des UUID techniques quand une clé
+naturelle existe :
+
+- **`users`** : clé primaire = `email` (pas d'UUID `id`). C'est aussi la valeur portée par la
+  session (`session.sub`) et par tous les champs `created_by` / `assigned_to` / `filled_by` des
+  autres tables — un admin ou un audit est donc rattaché à un email, pas à un identifiant opaque.
+- **`sites`** : clé primaire = `name` (ex. `"Dépôt Jendouba"`). Référencée par `missions.site` et
+  `submissions.site` via des clés étrangères, ce qui empêche d'enregistrer un site qui n'existe pas
+  dans la liste.
+- **`templates`**, **`missions`**, **`submissions`** gardent un UUID technique : un titre de
+  formulaire n'est pas garanti unique (deux admins peuvent créer le même), et une mission/un audit
+  est un enregistrement d'événement horodaté, pas une entité métier stable.
 
 ## Journalisation (logs)
 

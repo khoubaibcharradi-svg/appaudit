@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
   }
 
-  await setSessionCookie({ sub: user.id, role: user.role, name: user.name, email: user.email });
-  logger.info("auth.login_success", { userId: user.id, email: user.email, role: user.role });
+  await setSessionCookie({ sub: user.email, role: user.role, name: user.name, email: user.email });
+  logger.info("auth.login_success", { email: user.email, role: user.role });
   return NextResponse.json({ ok: true, role: user.role });
 }
